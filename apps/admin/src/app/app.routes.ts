@@ -13,7 +13,7 @@ export const routes: Routes = [
   },
   {
     path: 'app',
-    canActivate: [authenticatedGuard, permissionGuard('billing:write')],
+    canActivate: [authenticatedGuard, permissionGuard('billing:admin')],
     loadComponent: () =>
       import('./workspace/workspace.component').then(
         (module) => module.WorkspaceComponent,

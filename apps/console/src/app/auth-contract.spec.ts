@@ -20,14 +20,18 @@ const config: AppConfig = {
   apiBaseUrl: 'https://api-local.billme.sh/api/v1',
   auth: {
     bffBaseUrl: 'https://api-local.billme.sh/api/v1/auth/console',
-    defaultReturnPath: '/app',
   },
 };
 
 const session: BrowserSession = {
   authenticated: true,
+  context: {
+    application: 'daybook',
+    environment: 'development',
+    organization_id: 'org-1',
+  },
   csrfToken: 'csrf-value',
-  expiresAt: Date.now() + 60_000,
+  expiresAt: new Date(Date.now() + 60_000).toISOString(),
   permissions: ['billing:read'],
   user: {
     email: 'person@example.test',
@@ -95,12 +99,9 @@ describe('BFF browser contract', () => {
   it('rejects external and protocol-relative return paths', () => {
     const service = TestBed.inject(AuthService);
 
-    expect(service.safeReturnPath('//evil.example/path', '/app')).toBe('/app');
-    expect(service.safeReturnPath('https://evil.example/path', '/app')).toBe(
-      '/app',
-    );
-    expect(service.safeReturnPath('/app?tab=usage', '/app')).toBe(
-      '/app?tab=usage',
-    );
+    expect(service.safeReturnPath('//evil.example/path')).toBe('/app');
+    expect(service.safeReturnPath('https://evil.example/path')).toBe('/app');
+    expect(service.safeReturnPath('/application')).toBe('/app');
+    expect(service.safeReturnPath('/app?tab=usage')).toBe('/app?tab=usage');
   });
 });

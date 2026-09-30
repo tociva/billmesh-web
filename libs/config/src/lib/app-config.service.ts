@@ -18,22 +18,8 @@ function parseAuthConfig(value: unknown): AuthConfig {
     throw new Error('Config section "auth" is invalid.');
   }
 
-  const defaultReturnPath = asString(
-    value['defaultReturnPath'],
-    'auth.defaultReturnPath',
-  );
-  if (
-    !defaultReturnPath.startsWith('/') ||
-    defaultReturnPath.startsWith('//')
-  ) {
-    throw new Error(
-      'Config field "auth.defaultReturnPath" must be an app path.',
-    );
-  }
-
   return {
     bffBaseUrl: asString(value['bffBaseUrl'], 'auth.bffBaseUrl'),
-    defaultReturnPath,
   };
 }
 

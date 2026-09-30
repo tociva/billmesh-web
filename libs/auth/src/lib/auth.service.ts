@@ -5,6 +5,8 @@ import { firstValueFrom } from 'rxjs';
 import type { BffLogoutResponse, BrowserSession } from './auth.model';
 import { BrowserSessionStateService } from './browser-session-state.service';
 
+const DEFAULT_RETURN_PATH = '/app';
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
@@ -28,11 +30,8 @@ export class AuthService {
     }
   }
 
-  startLogin(config: AuthConfig, returnTo = config.defaultReturnPath): void {
-    const safeReturnTo = this.safeReturnPath(
-      returnTo,
-      config.defaultReturnPath,
-    );
+  startLogin(config: AuthConfig, returnTo = DEFAULT_RETURN_PATH): void {
+    const safeReturnTo = this.safeReturnPath(returnTo);
     const loginUrl = new URL(
       `${this.baseUrl(config)}/login`,
       window.location.origin,
@@ -53,25 +52,28 @@ export class AuthService {
     window.location.assign(result.logoutUrl);
   }
 
-  currentReturnPath(defaultPath: string): string {
+  currentReturnPath(): string {
     return this.safeReturnPath(
       `${window.location.pathname}${window.location.search}${window.location.hash}`,
-      defaultPath,
     );
   }
 
-  safeReturnPath(candidate: string, defaultPath: string): string {
+  safeReturnPath(candidate: string): string {
     if (
       !candidate.startsWith('/') ||
       candidate.startsWith('//') ||
       candidate.includes('\\')
     ) {
-      return defaultPath;
+      return DEFAULT_RETURN_PATH;
     }
 
     const resolved = new URL(candidate, window.location.origin);
-    if (resolved.origin !== window.location.origin) {
-      return defaultPath;
+    if (
+      resolved.origin !== window.location.origin ||
+      (resolved.pathname !== DEFAULT_RETURN_PATH &&
+        !resolved.pathname.startsWith(`${DEFAULT_RETURN_PATH}/`))
+    ) {
+      return DEFAULT_RETURN_PATH;
     }
 
     return `${resolved.pathname}${resolved.search}${resolved.hash}`;

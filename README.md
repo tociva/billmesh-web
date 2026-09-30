@@ -105,5 +105,7 @@ configured Console and Admin application origins.
 - OAuth access and refresh tokens never enter browser code
 
 Runtime configuration is loaded from `/config/config.json`. The checked-in
-files contain safe local defaults only; deployments replace them with public
-environment-specific values. OAuth client secrets remain in the BFF.
+files contain safe local defaults only. Each application also ships a
+`config.tpl.json` using the public `$AUTH_BFF_BASE_URL` and `$API_BASE_URL`
+deployment placeholders, following the Daybook runtime-config contract. OAuth
+client secrets remain in the BFF.

@@ -1,0 +1,6 @@
+{
+  "auth": {
+    "bffBaseUrl": "$AUTH_BFF_BASE_URL"
+  },
+  "apiBaseUrl": "$API_BASE_URL"
+}

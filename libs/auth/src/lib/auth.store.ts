@@ -44,7 +44,7 @@ export const AuthStore = signalStore(
     ) => ({
       can(permission: string): boolean {
         return (
-          sessionState.session()?.permissions.includes(permission) ?? false
+          sessionState.session()?.permissions?.includes(permission) ?? false
         );
       },
 
@@ -94,10 +94,7 @@ export const AuthStore = signalStore(
           return;
         }
 
-        authService.startLogin(
-          authConfig,
-          authService.currentReturnPath(authConfig.defaultReturnPath),
-        );
+        authService.startLogin(authConfig, authService.currentReturnPath());
       },
 
       async logout(): Promise<void> {

@@ -16,6 +16,11 @@ export class BrowserSessionStateService {
   }
 
   set(session: BrowserSession): void {
-    this.sessionValue.set(session);
+    this.sessionValue.set({
+      ...session,
+      permissions: Array.isArray(session.permissions)
+        ? session.permissions
+        : [],
+    });
   }
 }
