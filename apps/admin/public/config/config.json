@@ -1,0 +1,7 @@
+{
+  "apiBaseUrl": "https://api-local.billme.sh/api/v1",
+  "auth": {
+    "bffBaseUrl": "https://api-local.billme.sh/api/v1/auth/admin",
+    "defaultReturnPath": "/app"
+  }
+}

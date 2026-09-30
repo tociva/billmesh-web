@@ -1,0 +1,16 @@
+packages:
+  - 'apps/*'
+  - 'libs/*'
+
+allowBuilds:
+  '@parcel/watcher': true
+  '@scarf/scarf': false
+  '@swc/core': true
+  esbuild: true
+  less: false
+  lmdb: true
+  msgpackr-extract: true
+  nx: true
+
+autoInstallPeers: true
+verifyDepsBeforeRun: false

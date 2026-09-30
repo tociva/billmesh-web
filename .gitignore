@@ -1,0 +1,15 @@
+.DS_Store
+.idea/
+.vscode/
+*.log
+.env
+.env.*
+!.env.example
+node_modules/
+dist/
+coverage/
+.nx/
+.angular/
+.pnpm-store/
+out-tsc/
+*.tsbuildinfo

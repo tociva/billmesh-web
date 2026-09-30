@@ -1,0 +1,26 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": true,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "lib": ["ES2022", "DOM"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@billmesh/api-client": ["libs/api-client/src/index.ts"],
+      "@billmesh/auth": ["libs/auth/src/index.ts"],
+      "@billmesh/config": ["libs/config/src/index.ts"],
+      "@billmesh/domain": ["libs/domain/src/index.ts"],
+      "@billmesh/ui": ["libs/ui/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "dist", "tmp"]
+}

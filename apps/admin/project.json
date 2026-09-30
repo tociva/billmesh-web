@@ -1,0 +1,78 @@
+{
+  "name": "admin",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "prefix": "billmesh",
+  "sourceRoot": "apps/admin/src",
+  "cli": {
+    "cache": {
+      "enabled": false
+    }
+  },
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "outputPath": "dist/apps/admin",
+        "browser": "apps/admin/src/main.ts",
+        "index": "apps/admin/src/index.html",
+        "tsConfig": "apps/admin/tsconfig.app.json",
+        "assets": [{ "glob": "**/*", "input": "apps/admin/public" }],
+        "styles": [
+          "node_modules/@tailng-ui/flow/styles.css",
+          "apps/admin/src/styles.css"
+        ]
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "1MB",
+              "maximumError": "2MB"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "20kB",
+              "maximumError": "40kB"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "aot": false,
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      }
+    },
+    "serve": {
+      "executor": "@angular/build:dev-server",
+      "continuous": true,
+      "defaultConfiguration": "development",
+      "options": {
+        "host": "0.0.0.0",
+        "allowedHosts": ["localhost", "127.0.0.1"],
+        "port": 5201
+      },
+      "configurations": {
+        "production": { "buildTarget": "admin:build:production" },
+        "development": {
+          "buildTarget": "admin:build:development",
+          "prebundle": false
+        }
+      }
+    },
+    "test": {
+      "executor": "@angular/build:unit-test",
+      "options": {
+        "watch": false,
+        "runnerConfig": "apps/admin/vitest-base.config.ts"
+      }
+    }
+  },
+  "tags": ["scope:admin", "type:app", "lang:typescript"]
+}

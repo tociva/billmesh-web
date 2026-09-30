@@ -1,0 +1,54 @@
+{
+  "root": true,
+  "ignorePatterns": ["node_modules", "dist", ".nx", ".angular"],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "module"
+  },
+  "plugins": ["@typescript-eslint", "@nx"],
+  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
+  "rules": {
+    "@typescript-eslint/consistent-type-imports": "error",
+    "@typescript-eslint/no-explicit-any": "error",
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": [
+              "@angular/material",
+              "@angular/material/*",
+              "primeng",
+              "primeng/*",
+              "@ng-bootstrap/ng-bootstrap",
+              "bootstrap",
+              "bootstrap/*"
+            ],
+            "message": "Billmesh UI must use @tailng-ui components."
+          }
+        ]
+      }
+    ],
+    "@nx/enforce-module-boundaries": [
+      "error",
+      {
+        "allow": [],
+        "depConstraints": [
+          {
+            "sourceTag": "scope:console",
+            "onlyDependOnLibsWithTags": ["scope:console", "scope:shared"]
+          },
+          {
+            "sourceTag": "scope:admin",
+            "onlyDependOnLibsWithTags": ["scope:admin", "scope:shared"]
+          },
+          {
+            "sourceTag": "scope:shared",
+            "onlyDependOnLibsWithTags": ["scope:shared"]
+          }
+        ]
+      }
+    ]
+  }
+}
