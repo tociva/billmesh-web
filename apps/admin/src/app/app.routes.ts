@@ -12,6 +12,14 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'app/catalogue',
+    canActivate: [authenticatedGuard, permissionGuard('billing:admin')],
+    loadComponent: () =>
+      import('./catalogue/catalogue.component').then(
+        (module) => module.CatalogueComponent,
+      ),
+  },
+  {
     path: 'app',
     canActivate: [authenticatedGuard, permissionGuard('billing:admin')],
     loadComponent: () =>
@@ -39,7 +47,7 @@ export const routes: Routes = [
     path: 'forbidden',
     data: {
       title: 'Admin access denied',
-      message: 'Your account does not have billing:write permission.',
+      message: 'Your account does not have billing:admin permission.',
     },
     component: StatusPageComponent,
   },

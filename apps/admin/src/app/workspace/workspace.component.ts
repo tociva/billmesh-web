@@ -110,7 +110,12 @@ const ADMIN_AREAS: readonly AdminArea[] = [
 
             <p class="nav-label">Administration</p>
             @for (area of adminAreas; track area.id; let index = $index) {
-              <a class="nav-item" [href]="'#' + area.id">
+              <a
+                class="nav-item"
+                [href]="
+                  area.id === 'catalogue' ? '/app/catalogue' : '#' + area.id
+                "
+              >
                 <span class="nav-icon" aria-hidden="true"
                   >0{{ index + 2 }}</span
                 >
