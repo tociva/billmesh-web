@@ -1,7 +1,9 @@
 import { Component, computed, inject } from '@angular/core';
-import { Router } from '@angular/router';
-import { AuthStore } from '@billmesh/auth';
+import { ActivatedRoute, Router } from '@angular/router';
+import { AuthService, AuthStore } from '@billmesh/auth';
 import { AuthNoticeCardComponent, type AuthNotice } from '@billmesh/ui';
+
+const DEFAULT_LANDING_PATH = '/app';
 
 @Component({
   selector: 'billmesh-admin-landing',
@@ -11,6 +13,8 @@ import { AuthNoticeCardComponent, type AuthNotice } from '@billmesh/ui';
 })
 export class LandingComponent {
   private readonly authStore = inject(AuthStore);
+  private readonly authService = inject(AuthService);
+  private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
   protected readonly notice = computed<AuthNotice>(() => {
@@ -53,16 +57,37 @@ export class LandingComponent {
   });
 
   constructor() {
-    queueMicrotask(() => void this.authStore.initialize());
+    queueMicrotask(() => void this.initialize());
   }
 
   protected handleAction(): void {
     if (this.authStore.error()) {
       void this.authStore.initialize(true);
     } else if (this.authStore.isAuthenticated()) {
-      void this.router.navigateByUrl('/app');
+      void this.router.navigateByUrl(this.landingPath());
     } else {
       this.authStore.login();
     }
+  }
+
+  private async initialize(): Promise<void> {
+    await this.authStore.initialize();
+
+    if (!this.authStore.isAuthenticated()) {
+      return;
+    }
+
+    await this.router.navigateByUrl(this.landingPath(), { replaceUrl: true });
+  }
+
+  private landingPath(): string {
+    const queryParams = this.route.snapshot.queryParamMap;
+    const configuredBackUrl =
+      queryParams.get('backurl') ??
+      queryParams.get('backUrl') ??
+      queryParams.get('returnTo') ??
+      DEFAULT_LANDING_PATH;
+
+    return this.authService.safeReturnPath(configuredBackUrl);
   }
 }

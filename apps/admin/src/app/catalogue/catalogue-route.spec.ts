@@ -10,6 +10,6 @@ describe('Admin catalogue route', () => {
     expect(appRoute).toBeDefined();
     expect(appRoute?.canActivate).toHaveLength(2);
     expect(appRoute?.loadComponent).toBeTypeOf('function');
-    expect(catalogueRoute?.loadComponent).toBeTypeOf('function');
+    expect(catalogueRoute?.loadChildren).toBeTypeOf('function');
   });
 });

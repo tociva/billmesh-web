@@ -1,344 +1,133 @@
-<main class="catalogue-shell">
-  <header class="page-header">
+<main class="catalogue-page">
+  <header class="page-heading">
     <div>
       <p class="eyebrow">Catalogue</p>
-      <h1>Products and subscription plans</h1>
+      <h2>Products</h2>
       <p>
         Manage customer-visible products, pricing, credits, and entitlements.
       </p>
     </div>
-    <button type="button" class="primary" (click)="startProductCreate()">
-      Create product
-    </button>
+    <div class="actions">
+      <billmesh-filter-popover
+        ariaLabel="Product filters"
+        title="Filter products"
+        [fields]="filterFields"
+        [value]="filterValue()"
+        (filterApply)="applyFilters($event)"
+      />
+      <tng-button
+        type="button"
+        appearance="solid"
+        tone="primary"
+        (click)="createProduct()"
+      >
+        Create product
+      </tng-button>
+    </div>
   </header>
 
   @if (error()) {
     <div class="notice notice--error" role="alert">
-      <span>{{ error() }}</span>
-      <button type="button" (click)="loadProducts()">Retry</button>
+      {{ error() }}
+      <button type="button" class="action-button" (click)="loadProducts()">
+        Retry
+      </button>
     </div>
   }
 
-  <section class="toolbar" aria-label="Product filters">
-    <label>
-      <span>Search products</span>
-      <input
-        type="search"
-        [value]="search()"
-        (input)="setSearch($event)"
-        (keydown.enter)="applyFilters()"
-      />
-    </label>
-    <label>
-      <span>Status</span>
-      <select [value]="status()" (change)="setStatus($event)">
-        <option value="all">All</option>
-        <option value="active">Active</option>
-        <option value="archived">Archived</option>
-      </select>
-    </label>
-    <button type="button" (click)="applyFilters()">Apply</button>
-  </section>
-
-  <div class="catalogue-grid">
-    <section class="panel" aria-labelledby="products-title">
-      <div class="panel-heading">
-        <div>
-          <p class="eyebrow">Products</p>
-          <h2 id="products-title">{{ products().length }} results</h2>
-        </div>
-      </div>
-
-      @if (loadingProducts()) {
-        <p class="state" role="status">Loading products…</p>
-      } @else if (!products().length) {
+  <tng-card variant="outline" padding="lg">
+    <div class="panel-stack">
+      @if (!loading() && !products().length) {
         <p class="state">No products match these filters.</p>
       } @else {
-        <ul class="resource-list">
-          @for (product of products(); track product.id) {
-            <li>
+        <tng-table
+          ariaLabel="Products"
+          density="comfortable"
+          [columns]="columns"
+          [items]="products()"
+          [loading]="loading()"
+          [error]="!!error()"
+          [sortActive]="sort()"
+          [sortDirection]="direction()"
+          (sortChange)="changeSort($event)"
+        >
+          <ng-template tngTableCellTemplate="name" let-row="row">
+            <button
+              type="button"
+              class="link-button"
+              (click)="viewProduct(row)"
+            >
+              {{ row.name }}
+            </button>
+          </ng-template>
+          <ng-template tngTableCellTemplate="description" let-row="row">
+            {{ row.description || '—' }}
+          </ng-template>
+          <ng-template tngTableCellTemplate="status" let-row="row">
+            <span [class]="row.active ? 'status active' : 'status archived'">
+              {{ row.active ? 'Active' : 'Archived' }}
+            </span>
+          </ng-template>
+          <ng-template tngTableCellTemplate="updated_at" let-row="row">
+            {{ row.updated_at | date: 'mediumDate' }}
+          </ng-template>
+          <ng-template tngTableCellTemplate="actions" let-row="row">
+            <div class="row-actions">
               <button
                 type="button"
-                [class.selected]="selectedProduct()?.id === product.id"
-                (click)="selectProduct(product)"
+                class="icon-action"
+                aria-label="View product"
+                title="View product"
+                (click)="viewProduct(row)"
               >
-                <span>
-                  <strong>{{ product.name }}</strong>
-                  <small>{{ product.slug }}</small>
-                </span>
-                <span
-                  [class]="product.active ? 'status active' : 'status archived'"
-                >
-                  {{ product.active ? 'Active' : 'Archived' }}
-                </span>
+                <tng-icon icon="eye" aria-hidden="true" />
               </button>
-            </li>
-          }
-        </ul>
-      }
-
-      <div class="pagination">
-        <button
-          type="button"
-          [disabled]="offset() === 0"
-          (click)="previousPage()"
-        >
-          Previous
-        </button>
-        <span>Offset {{ offset() }}</span>
-        <button
-          type="button"
-          [disabled]="products().length < pageSize"
-          (click)="nextPage()"
-        >
-          Next
-        </button>
-      </div>
-    </section>
-
-    <section class="panel detail-panel" aria-live="polite">
-      @if (selectedProduct(); as product) {
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">Selected product</p>
-            <h2>{{ product.name }}</h2>
-            <p>{{ product.description || 'No description provided.' }}</p>
-          </div>
-          <div class="actions">
-            <button type="button" (click)="startProductEdit(product)">
-              Edit
-            </button>
-            <button
-              type="button"
-              class="danger"
-              (click)="toggleProduct(product)"
-            >
-              {{ product.active ? 'Archive' : 'Reactivate' }}
-            </button>
-          </div>
-        </div>
-
-        <div class="plans-heading">
-          <div>
-            <p class="eyebrow">Subscription plans</p>
-            <h3>{{ plans().length }} plans</h3>
-          </div>
-          <div class="actions">
-            <label>
-              <span class="visually-hidden">Plan status</span>
-              <select [value]="planStatus()" (change)="setPlanStatus($event)">
-                <option value="all">All plans</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </label>
-            <button
-              type="button"
-              class="primary"
-              [disabled]="!product.active"
-              [title]="
-                product.active
-                  ? ''
-                  : 'Reactivate the product before creating an active plan'
-              "
-              (click)="startPlanCreate()"
-            >
-              Create plan
-            </button>
-          </div>
-        </div>
-
-        @if (loadingPlans()) {
-          <p class="state" role="status">Loading plans…</p>
-        } @else if (!plans().length) {
-          <p class="state">This product has no matching plans.</p>
-        } @else {
-          <div class="plan-list">
-            @for (plan of plans(); track plan.id) {
-              <article>
-                <div>
-                  <strong>{{ plan.name }}</strong>
-                  <small>{{ plan.slug }} · {{ plan.billing_interval }}</small>
-                </div>
-                <div class="plan-price">
-                  <strong>{{ formatPrice(plan) }}</strong>
-                  <small>{{ plan.included_credits }} credits</small>
-                </div>
-                <span
-                  [class]="plan.active ? 'status active' : 'status archived'"
-                >
-                  {{ plan.active ? 'Active' : 'Inactive' }}
-                </span>
-                <div class="actions">
-                  <button type="button" (click)="startPlanEdit(plan)">
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    class="danger"
-                    [disabled]="!product.active && !plan.active"
-                    (click)="togglePlan(plan)"
-                  >
-                    {{ plan.active ? 'Archive' : 'Reactivate' }}
-                  </button>
-                </div>
-              </article>
-            }
-          </div>
-        }
-      } @else {
-        <p class="state">Select a product to manage its plans.</p>
-      }
-    </section>
-  </div>
-
-  @if (productMode()) {
-    <div class="dialog-backdrop" (click)="closeEditors()">
-      <section
-        #editorDialog
-        class="dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="product-form-title"
-        (click)="$event.stopPropagation()"
-        (keydown)="trapDialogFocus($event)"
-      >
-        <div class="panel-heading">
-          <h2 id="product-form-title">
-            {{ productMode() === 'create' ? 'Create product' : 'Edit product' }}
-          </h2>
-          <button
-            type="button"
-            aria-label="Close product editor"
-            (click)="closeEditors()"
-          >
-            ×
-          </button>
-        </div>
-        <form [formGroup]="productForm" (ngSubmit)="submitProduct()">
-          <label>
-            <span>Slug</span>
-            <input formControlName="slug" autocomplete="off" />
-            @if (
-              productForm.controls.slug.invalid &&
-              productForm.controls.slug.touched
-            ) {
-              <small class="field-error"
-                >Use lowercase letters, numbers, and single hyphens.</small
+              <button
+                type="button"
+                class="icon-action"
+                aria-label="Edit product"
+                title="Edit product"
+                (click)="editProduct(row)"
               >
-            }
-          </label>
-          <label>
-            <span>Name</span>
-            <input formControlName="name" autocomplete="off" />
-          </label>
-          <label>
-            <span>Description</span>
-            <textarea formControlName="description" rows="4"></textarea>
-          </label>
-          @if (editorError()) {
-            <p class="field-error" role="alert">{{ editorError() }}</p>
-          }
-          <div class="dialog-actions">
-            <button type="button" (click)="closeEditors()">Cancel</button>
-            <button
-              type="submit"
-              class="primary"
-              [disabled]="saving() || productForm.invalid"
-            >
-              {{ saving() ? 'Saving…' : 'Save product' }}
-            </button>
-          </div>
-        </form>
-      </section>
-    </div>
-  }
+                <tng-icon icon="pencil" aria-hidden="true" />
+              </button>
+              @if (row.active) {
+                <button
+                  type="button"
+                  class="icon-action danger"
+                  aria-label="Archive product"
+                  title="Archive product"
+                  (click)="archiveProduct(row)"
+                >
+                  <tng-icon icon="trash2" aria-hidden="true" />
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  class="icon-action"
+                  aria-label="Reactivate product"
+                  title="Reactivate product"
+                  (click)="reactivateProduct(row)"
+                >
+                  <tng-icon icon="archiveRestore" aria-hidden="true" />
+                </button>
+              }
+            </div>
+          </ng-template>
+        </tng-table>
+      }
 
-  @if (planMode()) {
-    <div class="dialog-backdrop" (click)="closeEditors()">
-      <section
-        #editorDialog
-        class="dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="plan-form-title"
-        (click)="$event.stopPropagation()"
-        (keydown)="trapDialogFocus($event)"
-      >
-        <div class="panel-heading">
-          <h2 id="plan-form-title">
-            {{ planMode() === 'create' ? 'Create plan' : 'Edit plan' }}
-          </h2>
-          <button
-            type="button"
-            aria-label="Close plan editor"
-            (click)="closeEditors()"
-          >
-            ×
-          </button>
-        </div>
-        <form [formGroup]="planForm" (ngSubmit)="submitPlan()">
-          <div class="form-grid">
-            <label>
-              <span>Slug</span>
-              <input formControlName="slug" autocomplete="off" />
-            </label>
-            <label>
-              <span>Name</span>
-              <input formControlName="name" autocomplete="off" />
-            </label>
-            <label>
-              <span>Price</span>
-              <input
-                formControlName="price"
-                inputmode="decimal"
-                placeholder="0.00"
-              />
-            </label>
-            <label>
-              <span>Currency</span>
-              <input formControlName="currency" maxlength="3" />
-            </label>
-            <label>
-              <span>Billing interval</span>
-              <select formControlName="billingInterval">
-                <option value="monthly">Monthly</option>
-                <option value="annual">Annual</option>
-              </select>
-            </label>
-            <label>
-              <span>Included credits</span>
-              <input
-                formControlName="includedCredits"
-                type="number"
-                min="0"
-                step="1"
-              />
-            </label>
-          </div>
-          <label>
-            <span>Entitlements JSON</span>
-            <textarea
-              formControlName="entitlements"
-              rows="7"
-              spellcheck="false"
-            ></textarea>
-          </label>
-          @if (editorError()) {
-            <p class="field-error" role="alert">{{ editorError() }}</p>
-          }
-          <div class="dialog-actions">
-            <button type="button" (click)="closeEditors()">Cancel</button>
-            <button
-              type="submit"
-              class="primary"
-              [disabled]="saving() || planForm.invalid"
-            >
-              {{ saving() ? 'Saving…' : 'Save plan' }}
-            </button>
-          </div>
-        </form>
-      </section>
+      <div class="pagination-footer">
+        <tng-paginator
+          ariaLabel="Product pagination"
+          [pageIndex]="pageIndex()"
+          [pageSize]="pageSize()"
+          [pageSizeOptions]="[10, 25, 50, 100]"
+          [totalItems]="total()"
+          [disabled]="loading()"
+          (pageChange)="changePage($event)"
+        />
+      </div>
     </div>
-  }
+  </tng-card>
 </main>

@@ -1,0 +1,81 @@
+<main class="catalogue-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Subscription plan</p>
+      <h2>{{ plan()?.name || 'Plan' }}</h2>
+      <p>Pricing, included credits, and entitlements.</p>
+    </div>
+    <div class="actions">
+      <tng-button type="button" appearance="outline" (click)="back()"
+        >Back</tng-button
+      >
+      @if (plan(); as item) {
+        <tng-button type="button" appearance="outline" (click)="edit()"
+          >Edit</tng-button
+        >
+        @if (item.active) {
+          <tng-button
+            type="button"
+            appearance="outline"
+            tone="danger"
+            (click)="archive()"
+            >Archive</tng-button
+          >
+        } @else {
+          <tng-button
+            type="button"
+            appearance="solid"
+            tone="primary"
+            (click)="reactivate()"
+            >Reactivate</tng-button
+          >
+        }
+      }
+    </div>
+  </header>
+  @if (error()) {
+    <p class="notice notice--error" role="alert">{{ error() }}</p>
+  }
+  <tng-card variant="outline" padding="lg">
+    @if (loading()) {
+      <p class="state" role="status">Loading plan…</p>
+    } @else if (plan(); as item) {
+      <div class="detail-grid">
+        <dl>
+          <dt>Slug</dt>
+          <dd>{{ item.slug }}</dd>
+        </dl>
+        <dl>
+          <dt>Status</dt>
+          <dd>
+            <span [class]="item.active ? 'status active' : 'status archived'">{{
+              item.active ? 'Active' : 'Inactive'
+            }}</span>
+          </dd>
+        </dl>
+        <dl>
+          <dt>Price</dt>
+          <dd>{{ formatPrice(item) }} / {{ item.billing_interval }}</dd>
+        </dl>
+        <dl>
+          <dt>Included credits</dt>
+          <dd>{{ item.included_credits }}</dd>
+        </dl>
+        <dl>
+          <dt>Created</dt>
+          <dd>{{ item.created_at | date: 'medium' }}</dd>
+        </dl>
+        <dl>
+          <dt>Updated</dt>
+          <dd>{{ item.updated_at | date: 'medium' }}</dd>
+        </dl>
+        <dl style="grid-column: 1 / -1">
+          <dt>Entitlements</dt>
+          <dd>
+            <pre>{{ item.entitlements | json }}</pre>
+          </dd>
+        </dl>
+      </div>
+    }
+  </tng-card>
+</main>

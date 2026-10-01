@@ -361,10 +361,17 @@
   font-size: 0.72rem;
 }
 
-.sidebar-footer span:last-child {
+.sidebar-footer a {
   color: var(--tng-semantic-foreground-muted);
   font-size: 0.66rem;
   line-height: 1.35;
+  text-decoration: none;
+}
+
+.sidebar-footer a:hover,
+.sidebar-footer a:focus-visible {
+  color: var(--tng-semantic-accent-brand);
+  text-decoration: underline;
 }
 
 .route-content {

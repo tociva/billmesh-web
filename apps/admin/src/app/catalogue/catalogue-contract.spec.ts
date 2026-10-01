@@ -70,7 +70,7 @@ describe('CatalogueAdminService', () => {
     expect(list.request.method).toBe('GET');
     expect(list.request.withCredentials).toBe(true);
     expect(list.request.headers.has('X-CSRF-Token')).toBe(false);
-    list.flush([]);
+    list.flush({ items: [], total: 0, limit: 25, offset: 50 });
 
     catalogue.getProduct('product-1').subscribe();
     requests
@@ -108,7 +108,7 @@ describe('CatalogueAdminService', () => {
       .expectOne(
         'https://api-local.billme.sh/api/v1/admin/products/product%2Funsafe/plans?status=inactive',
       )
-      .flush([]);
+      .flush({ items: [], total: 0, limit: 50, offset: 0 });
 
     catalogue
       .createPlan('product-1', {

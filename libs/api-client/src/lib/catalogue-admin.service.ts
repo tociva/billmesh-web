@@ -3,6 +3,7 @@ import type {
   Plan,
   PlanCreate,
   PlanUpdate,
+  PageResult,
   Product,
   ProductCreate,
   ProductUpdate,
@@ -15,21 +16,27 @@ export interface ProductFilters {
   readonly query?: string;
   readonly limit?: number;
   readonly offset?: number;
+  readonly sort?: 'slug' | 'name' | 'status' | 'created_at' | 'updated_at';
+  readonly direction?: 'asc' | 'desc';
 }
 
 export interface PlanFilters {
   readonly status?: 'all' | 'active' | 'inactive';
   readonly limit?: number;
   readonly offset?: number;
+  readonly query?: string;
+  readonly sort?:
+    'slug' | 'name' | 'price' | 'status' | 'created_at' | 'updated_at';
+  readonly direction?: 'asc' | 'desc';
 }
 
 @Injectable({ providedIn: 'root' })
 export class CatalogueAdminService {
   private readonly api = inject(BillmeshApiClient);
 
-  listProducts(filters: ProductFilters = {}): Observable<readonly Product[]> {
-    return this.api.get<readonly Product[]>(
-      `/admin/products${this.query({ status: filters.status, query: filters.query, limit: filters.limit, offset: filters.offset })}`,
+  listProducts(filters: ProductFilters = {}): Observable<PageResult<Product>> {
+    return this.api.get<PageResult<Product>>(
+      `/admin/products${this.query({ status: filters.status, query: filters.query, limit: filters.limit, offset: filters.offset, sort: filters.sort, direction: filters.direction })}`,
     );
   }
 
@@ -51,9 +58,9 @@ export class CatalogueAdminService {
   listPlans(
     productId: string,
     filters: PlanFilters = {},
-  ): Observable<readonly Plan[]> {
-    return this.api.get<readonly Plan[]>(
-      `/admin/products/${encodeURIComponent(productId)}/plans${this.query({ status: filters.status, limit: filters.limit, offset: filters.offset })}`,
+  ): Observable<PageResult<Plan>> {
+    return this.api.get<PageResult<Plan>>(
+      `/admin/products/${encodeURIComponent(productId)}/plans${this.query({ status: filters.status, query: filters.query, limit: filters.limit, offset: filters.offset, sort: filters.sort, direction: filters.direction })}`,
     );
   }
 

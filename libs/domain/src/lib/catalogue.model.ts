@@ -60,3 +60,10 @@ export interface PlanUpdate {
   readonly billing_interval?: 'monthly' | 'annual';
   readonly active?: boolean;
 }
+
+export interface PageResult<T> {
+  readonly items: readonly T[];
+  readonly total: number;
+  readonly limit: number;
+  readonly offset: number;
+}

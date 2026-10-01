@@ -1,0 +1,72 @@
+<main class="catalogue-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Catalogue</p>
+      <h2>{{ title() }}</h2>
+      <p>
+        {{
+          editMode
+            ? 'Update the customer-visible product details.'
+            : 'Add a new billable product.'
+        }}
+      </p>
+    </div>
+    <tng-button type="button" appearance="outline" (click)="back()"
+      >Back</tng-button
+    >
+  </header>
+
+  <tng-card variant="outline" padding="lg">
+    @if (loading()) {
+      <p class="state" role="status">Loading product…</p>
+    } @else {
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <label>
+          <span>Slug</span>
+          <tng-input
+            tngAngularForms
+            formControlName="slug"
+            ariaLabel="Product slug"
+            autocomplete="off"
+            fullWidth
+          />
+          @if (form.controls.slug.invalid && form.controls.slug.touched) {
+            <small class="field-error"
+              >Use lowercase letters, numbers, and single hyphens.</small
+            >
+          }
+        </label>
+        <label>
+          <span>Name</span>
+          <tng-input
+            tngAngularForms
+            formControlName="name"
+            ariaLabel="Product name"
+            autocomplete="off"
+            fullWidth
+          />
+        </label>
+        <label>
+          <span>Description</span>
+          <textarea formControlName="description" rows="5"></textarea>
+        </label>
+        @if (error()) {
+          <p class="notice notice--error" role="alert">{{ error() }}</p>
+        }
+        <div class="form-actions">
+          <tng-button type="button" appearance="outline" (click)="back()"
+            >Cancel</tng-button
+          >
+          <tng-button
+            type="submit"
+            appearance="solid"
+            tone="primary"
+            [disabled]="saving() || form.invalid"
+          >
+            {{ saving() ? 'Saving…' : 'Save product' }}
+          </tng-button>
+        </div>
+      </form>
+    }
+  </tng-card>
+</main>

@@ -29,9 +29,9 @@ export const routes: Routes = [
       },
       {
         path: 'catalogue',
-        loadComponent: () =>
-          import('./catalogue/catalogue.component').then(
-            (module) => module.CatalogueComponent,
+        loadChildren: () =>
+          import('./catalogue/catalogue.routes').then(
+            (module) => module.catalogueRoutes,
           ),
       },
       {

@@ -1,0 +1,41 @@
+:host {
+  display: inline-flex;
+}
+
+:host ::ng-deep .tng-popover-panel {
+  right: 0;
+  left: auto;
+  box-sizing: border-box;
+  width: min(24rem, calc(100vw - 2rem));
+}
+
+form,
+.filter-fields,
+label {
+  display: grid;
+}
+
+form,
+.filter-fields {
+  gap: 1rem;
+}
+
+label {
+  gap: 0.35rem;
+  color: var(--tng-semantic-foreground-secondary);
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+tng-input,
+tng-select {
+  width: 100%;
+}
+
+footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--tng-semantic-border-subtle);
+}

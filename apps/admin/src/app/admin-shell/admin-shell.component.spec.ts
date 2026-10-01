@@ -54,6 +54,18 @@ describe('AdminShellComponent', () => {
     expect(compiled.textContent).toContain('Avery Operator');
   });
 
+  it('links the sidebar credit to Tociva', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    const credit =
+      compiled.querySelector<HTMLAnchorElement>('.sidebar-footer a');
+
+    expect(compiled.textContent).toContain('Built and maintained by');
+    expect(credit?.textContent).toContain('Tociva Private Limited');
+    expect(credit?.href).toBe('https://tociva.com/');
+    expect(credit?.target).toBe('_blank');
+    expect(credit?.rel).toContain('noopener');
+  });
+
   it.each([
     ['/app', 'Overview'],
     ['/app/catalogue', 'Catalogue'],

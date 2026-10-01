@@ -1,0 +1,52 @@
+<main class="catalogue-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Catalogue</p>
+      <h2>Archive product</h2>
+      <p>Archive this product without removing billing history.</p>
+    </div>
+    <tng-button type="button" appearance="outline" (click)="back()"
+      >Back</tng-button
+    >
+  </header>
+
+  <tng-card variant="outline" padding="lg">
+    @if (loading()) {
+      <p class="state" role="status">Loading product…</p>
+    } @else if (product(); as item) {
+      <div class="panel-stack">
+        <h3>{{ item.name }}</h3>
+        <p>
+          Existing subscriptions and financial history will be preserved. The
+          product will no longer be available for new subscriptions.
+        </p>
+        <label class="confirmation">
+          <tng-checkbox
+            [checked]="confirmed()"
+            (checkedChange)="confirmed.set($event)"
+          />
+          <span>I understand and want to archive {{ item.name }}.</span>
+        </label>
+        @if (error()) {
+          <p class="notice notice--error" role="alert">{{ error() }}</p>
+        }
+        <div class="form-actions">
+          <tng-button type="button" appearance="outline" (click)="back()"
+            >Cancel</tng-button
+          >
+          <tng-button
+            type="button"
+            appearance="solid"
+            tone="danger"
+            [disabled]="!confirmed() || saving()"
+            (click)="archive()"
+          >
+            {{ saving() ? 'Archiving…' : 'Archive product' }}
+          </tng-button>
+        </div>
+      </div>
+    } @else if (error()) {
+      <p class="notice notice--error" role="alert">{{ error() }}</p>
+    }
+  </tng-card>
+</main>

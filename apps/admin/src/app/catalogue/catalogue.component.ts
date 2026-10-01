@@ -1,450 +1,222 @@
-import { HttpErrorResponse } from '@angular/common/http';
-import {
-  Component,
-  ViewChild,
-  inject,
-  signal,
-  type ElementRef,
-} from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { DatePipe } from '@angular/common';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CatalogueAdminService } from '@billmesh/api-client';
-import type { Plan, Product } from '@billmesh/domain';
+import type { Product } from '@billmesh/domain';
+import {
+  FilterPopoverComponent,
+  type FilterPopoverField,
+  type FilterPopoverValue,
+} from '@billmesh/ui';
+import {
+  TngButtonComponent,
+  TngCardComponent,
+  TngPaginator,
+  TngTable,
+  TngTableCellTpl,
+  type TngTableColumn,
+} from '@tailng-ui/components';
+import type {
+  TngPaginationChangeEvent,
+  TngTableSortChange,
+} from '@tailng-ui/primitives';
+import { TngIcon } from '@tailng-ui/icons';
+import type { Subscription } from 'rxjs';
+import {
+  catalogueMessage,
+  nonNegativeInteger,
+  pageSize,
+} from './catalogue.helpers';
 
-type EditorMode = 'create' | 'edit' | null;
+type ProductStatus = 'all' | 'active' | 'archived';
+type ProductSort = 'slug' | 'name' | 'status' | 'created_at' | 'updated_at';
 
 @Component({
   selector: 'billmesh-admin-catalogue',
-  imports: [ReactiveFormsModule],
+  imports: [
+    DatePipe,
+    FilterPopoverComponent,
+    TngButtonComponent,
+    TngCardComponent,
+    TngIcon,
+    TngPaginator,
+    TngTable,
+    TngTableCellTpl,
+  ],
   templateUrl: './catalogue.component.html',
-  styleUrl: './catalogue.component.css',
+  styleUrl: './catalogue.shared.css',
 })
 export class CatalogueComponent {
-  @ViewChild('editorDialog') private editorDialog?: ElementRef<HTMLElement>;
-
   private readonly catalogue = inject(CatalogueAdminService);
-  private readonly formBuilder = inject(FormBuilder);
-  private returnFocus: HTMLElement | null = null;
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private productRequest?: Subscription;
 
-  protected readonly pageSize = 25;
   protected readonly products = signal<readonly Product[]>([]);
-  protected readonly plans = signal<readonly Plan[]>([]);
-  protected readonly selectedProduct = signal<Product | null>(null);
-  protected readonly selectedPlan = signal<Plan | null>(null);
-  protected readonly loadingProducts = signal(false);
-  protected readonly loadingPlans = signal(false);
-  protected readonly saving = signal(false);
+  protected readonly total = signal(0);
+  protected readonly loading = signal(false);
   protected readonly error = signal('');
-  protected readonly editorError = signal('');
-  protected readonly search = signal('');
-  protected readonly status = signal<'all' | 'active' | 'archived'>('all');
-  protected readonly planStatus = signal<'all' | 'active' | 'inactive'>('all');
-  protected readonly offset = signal(0);
-  protected readonly productMode = signal<EditorMode>(null);
-  protected readonly planMode = signal<EditorMode>(null);
+  protected readonly query = signal('');
+  protected readonly status = signal<ProductStatus>('all');
+  protected readonly pageIndex = signal(0);
+  protected readonly pageSize = signal(25);
+  protected readonly sort = signal<ProductSort>('slug');
+  protected readonly direction = signal<'asc' | 'desc'>('asc');
 
-  protected readonly productForm = this.formBuilder.nonNullable.group({
-    slug: [
-      '',
-      [
-        Validators.required,
-        Validators.minLength(2),
-        Validators.pattern(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/),
-        Validators.maxLength(63),
+  protected readonly columns: readonly TngTableColumn<Product>[] = [
+    { id: 'name', label: 'Name', sortable: true, width: '18rem' },
+    { id: 'slug', label: 'Slug', sortable: true, width: '15rem' },
+    { id: 'description', label: 'Description', truncate: true },
+    { id: 'status', label: 'Status', sortable: true, width: '8rem' },
+    { id: 'updated_at', label: 'Updated', sortable: true, width: '12rem' },
+    {
+      id: 'actions',
+      label: 'Actions',
+      align: 'end',
+      headerAlign: 'end',
+      width: '12rem',
+    },
+  ];
+  protected readonly filterFields: readonly FilterPopoverField[] = [
+    {
+      id: 'query',
+      label: 'Search',
+      type: 'text',
+      placeholder: 'Name, slug, or description',
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      type: 'enum',
+      placeholder: 'All statuses',
+      options: [
+        { label: 'Active', value: 'active' },
+        { label: 'Archived', value: 'archived' },
       ],
-    ],
-    name: ['', [Validators.required, Validators.maxLength(120)]],
-    description: ['', [Validators.maxLength(2000)]],
-  });
-
-  protected readonly planForm = this.formBuilder.nonNullable.group({
-    slug: [
-      '',
-      [
-        Validators.required,
-        Validators.minLength(2),
-        Validators.pattern(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/),
-        Validators.maxLength(63),
-      ],
-    ],
-    name: ['', [Validators.required, Validators.maxLength(120)]],
-    price: [
-      '0.00',
-      [Validators.required, Validators.pattern(/^\d+(?:\.\d{1,2})?$/)],
-    ],
-    currency: ['INR', [Validators.required, Validators.pattern(/^[A-Z]{3}$/)]],
-    billingInterval: ['monthly' as 'monthly' | 'annual', Validators.required],
-    includedCredits: [
-      0,
-      [Validators.required, Validators.min(0), Validators.pattern(/^\d+$/)],
-    ],
-    entitlements: ['{}', Validators.required],
-  });
+    },
+  ];
+  protected readonly filterValue = computed<FilterPopoverValue>(() => ({
+    ...(this.query() ? { query: this.query() } : {}),
+    ...(this.status() !== 'all' ? { status: this.status() } : {}),
+  }));
 
   constructor() {
-    this.loadProducts();
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      const status = params.get('status');
+      this.query.set(params.get('query')?.trim() ?? '');
+      this.status.set(
+        status === 'active' || status === 'archived' ? status : 'all',
+      );
+      this.pageIndex.set(nonNegativeInteger(params.get('page')));
+      this.pageSize.set(pageSize(params.get('size'), [10, 25, 50, 100], 25));
+      this.sort.set(this.readSort(params.get('sort')));
+      this.direction.set(params.get('direction') === 'desc' ? 'desc' : 'asc');
+      this.loadProducts();
+    });
   }
 
   protected loadProducts(): void {
-    this.loadingProducts.set(true);
+    this.loading.set(true);
     this.error.set('');
-    this.catalogue
+    this.productRequest?.unsubscribe();
+    this.productRequest = this.catalogue
       .listProducts({
         status: this.status(),
-        query: this.search().trim(),
-        limit: this.pageSize,
-        offset: this.offset(),
+        query: this.query(),
+        limit: this.pageSize(),
+        offset: this.pageIndex() * this.pageSize(),
+        sort: this.sort(),
+        direction: this.direction(),
       })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (products) => {
-          this.products.set(products);
-          this.loadingProducts.set(false);
-          const selected = this.selectedProduct();
-          if (selected) {
-            const refreshed = products.find((item) => item.id === selected.id);
-            if (refreshed) this.selectProduct(refreshed);
-          }
+        next: (page) => {
+          this.products.set(page.items);
+          this.total.set(page.total);
+          this.loading.set(false);
         },
         error: (error: unknown) => {
-          this.error.set(this.messageFor(error));
-          this.loadingProducts.set(false);
+          this.error.set(catalogueMessage(error));
+          this.loading.set(false);
         },
       });
   }
 
-  protected selectProduct(product: Product): void {
-    this.selectedProduct.set(product);
-    this.selectedPlan.set(null);
-    this.loadPlans();
+  protected applyFilters(value: FilterPopoverValue): void {
+    void this.updateQuery({
+      query: value['query'] || null,
+      status: value['status'] || null,
+      page: null,
+    });
   }
 
-  protected loadPlans(): void {
-    const product = this.selectedProduct();
-    if (!product) return;
-    this.loadingPlans.set(true);
+  protected changePage(event: TngPaginationChangeEvent): void {
+    void this.updateQuery({
+      page: event.pageIndex || null,
+      size: event.pageSize === 25 ? null : event.pageSize,
+    });
+  }
+
+  protected changeSort(event: TngTableSortChange): void {
+    void this.updateQuery({
+      sort:
+        event.activeColumnId && event.direction ? event.activeColumnId : null,
+      direction: event.direction === 'desc' ? 'desc' : null,
+      page: null,
+    });
+  }
+
+  protected createProduct(): void {
+    void this.router.navigate(['/app/catalogue/create'], {
+      queryParams: { burl: this.router.url },
+    });
+  }
+
+  protected viewProduct(product: Product): void {
+    void this.router.navigate(['/app/catalogue', product.id], {
+      queryParams: { burl: this.router.url },
+    });
+  }
+
+  protected editProduct(product: Product): void {
+    void this.router.navigate(['/app/catalogue', product.id, 'edit'], {
+      queryParams: { burl: this.router.url },
+    });
+  }
+
+  protected archiveProduct(product: Product): void {
+    void this.router.navigate(['/app/catalogue', product.id, 'delete'], {
+      queryParams: { burl: this.router.url },
+    });
+  }
+
+  protected reactivateProduct(product: Product): void {
     this.catalogue
-      .listPlans(product.id, {
-        status: this.planStatus(),
-        limit: 200,
-        offset: 0,
-      })
+      .updateProduct(product.id, { version: product.version, active: true })
       .subscribe({
-        next: (plans) => {
-          this.plans.set(plans);
-          this.loadingPlans.set(false);
-        },
-        error: (error: unknown) => {
-          this.error.set(this.messageFor(error));
-          this.loadingPlans.set(false);
-        },
+        next: () => this.loadProducts(),
+        error: (error: unknown) => this.error.set(catalogueMessage(error)),
       });
   }
 
-  protected setSearch(event: Event): void {
-    this.search.set((event.target as HTMLInputElement).value);
-  }
-
-  protected setStatus(event: Event): void {
-    this.status.set(
-      (event.target as HTMLSelectElement).value as
-        'all' | 'active' | 'archived',
-    );
-  }
-
-  protected setPlanStatus(event: Event): void {
-    this.planStatus.set(
-      (event.target as HTMLSelectElement).value as
-        'all' | 'active' | 'inactive',
-    );
-    this.loadPlans();
-  }
-
-  protected applyFilters(): void {
-    this.offset.set(0);
-    this.loadProducts();
-  }
-
-  protected previousPage(): void {
-    this.offset.update((value) => Math.max(0, value - this.pageSize));
-    this.loadProducts();
-  }
-
-  protected nextPage(): void {
-    this.offset.update((value) => value + this.pageSize);
-    this.loadProducts();
-  }
-
-  protected startProductCreate(): void {
-    this.closeEditors();
-    this.rememberFocus();
-    this.productForm.controls.slug.enable();
-    this.productForm.reset({ slug: '', name: '', description: '' });
-    this.productMode.set('create');
-    this.focusEditor();
-  }
-
-  protected startProductEdit(product: Product): void {
-    this.closeEditors();
-    this.rememberFocus();
-    this.selectedProduct.set(product);
-    this.productForm.reset({
-      slug: product.slug,
-      name: product.name,
-      description: product.description,
-    });
-    this.productForm.controls.slug.disable();
-    this.productMode.set('edit');
-    this.focusEditor();
-  }
-
-  protected submitProduct(): void {
-    if (this.productForm.invalid) {
-      this.productForm.markAllAsTouched();
-      return;
-    }
-    this.saving.set(true);
-    this.editorError.set('');
-    const value = this.productForm.getRawValue();
-    const mode = this.productMode();
-    const selected = this.selectedProduct();
-    const request =
-      mode === 'create'
-        ? this.catalogue.createProduct({
-            slug: value.slug.trim(),
-            name: value.name.trim(),
-            description: value.description.trim(),
-          })
-        : this.catalogue.updateProduct(selected!.id, {
-            version: selected!.version,
-            name: value.name.trim(),
-            description: value.description.trim(),
-          });
-    request.subscribe({
-      next: (product) => {
-        this.selectedProduct.set(product);
-        this.saving.set(false);
-        this.closeEditors();
-        this.loadProducts();
-      },
-      error: (error: unknown) => {
-        this.editorError.set(this.messageFor(error));
-        this.saving.set(false);
-      },
+  private updateQuery(
+    queryParams: Record<string, string | number | null>,
+  ): Promise<boolean> {
+    return this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+      queryParamsHandling: 'merge',
     });
   }
 
-  protected toggleProduct(product: Product): void {
-    const action = product.active ? 'archive' : 'reactivate';
-    if (
-      !window.confirm(
-        `Are you sure you want to ${action} ${product.name}? Existing subscriptions will be preserved.`,
-      )
-    )
-      return;
-    this.catalogue
-      .updateProduct(product.id, {
-        version: product.version,
-        active: !product.active,
-      })
-      .subscribe({
-        next: (updated) => {
-          this.selectedProduct.set(updated);
-          this.loadProducts();
-        },
-        error: (error: unknown) => this.error.set(this.messageFor(error)),
-      });
-  }
-
-  protected startPlanCreate(): void {
-    this.closeEditors();
-    this.rememberFocus();
-    this.planForm.controls.slug.enable();
-    this.planForm.reset({
-      slug: '',
-      name: '',
-      price: '0.00',
-      currency: 'INR',
-      billingInterval: 'monthly',
-      includedCredits: 0,
-      entitlements: '{}',
-    });
-    this.planMode.set('create');
-    this.focusEditor();
-  }
-
-  protected startPlanEdit(plan: Plan): void {
-    this.closeEditors();
-    this.rememberFocus();
-    this.selectedPlan.set(plan);
-    this.planForm.reset({
-      slug: plan.slug,
-      name: plan.name,
-      price: (plan.price_minor / 100).toFixed(2),
-      currency: plan.currency,
-      billingInterval: plan.billing_interval,
-      includedCredits: plan.included_credits,
-      entitlements: JSON.stringify(plan.entitlements, null, 2),
-    });
-    this.planForm.controls.slug.disable();
-    this.planMode.set('edit');
-    this.focusEditor();
-  }
-
-  protected submitPlan(): void {
-    if (this.planForm.invalid) {
-      this.planForm.markAllAsTouched();
-      return;
-    }
-    const product = this.selectedProduct();
-    if (!product) return;
-    const value = this.planForm.getRawValue();
-    let entitlements: Record<string, unknown>;
-    try {
-      const parsed: unknown = JSON.parse(value.entitlements);
-      if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object')
-        throw new Error('not an object');
-      entitlements = parsed as Record<string, unknown>;
-    } catch {
-      this.editorError.set('Entitlements must be a valid JSON object.');
-      return;
-    }
-    const priceMinor = this.minorUnits(value.price);
-    if (priceMinor === null) {
-      this.editorError.set('Price must have no more than two decimal places.');
-      return;
-    }
-    this.saving.set(true);
-    this.editorError.set('');
-    const base = {
-      name: value.name.trim(),
-      price_minor: priceMinor,
-      currency: value.currency,
-      included_credits: value.includedCredits,
-      entitlements,
-      billing_interval: value.billingInterval,
-    } as const;
-    const selected = this.selectedPlan();
-    const request =
-      this.planMode() === 'create'
-        ? this.catalogue.createPlan(product.id, {
-            ...base,
-            slug: value.slug.trim(),
-            active: true,
-          })
-        : this.catalogue.updatePlan(selected!.id, {
-            ...base,
-            version: selected!.version,
-          });
-    request.subscribe({
-      next: () => {
-        this.saving.set(false);
-        this.closeEditors();
-        this.loadPlans();
-      },
-      error: (error: unknown) => {
-        this.editorError.set(this.messageFor(error));
-        this.saving.set(false);
-      },
-    });
-  }
-
-  protected togglePlan(plan: Plan): void {
-    const action = plan.active ? 'archive' : 'reactivate';
-    if (
-      !window.confirm(
-        `Are you sure you want to ${action} ${plan.name}? Existing subscriptions will be preserved.`,
-      )
-    )
-      return;
-    this.catalogue
-      .updatePlan(plan.id, { version: plan.version, active: !plan.active })
-      .subscribe({
-        next: () => this.loadPlans(),
-        error: (error: unknown) => this.error.set(this.messageFor(error)),
-      });
-  }
-
-  protected closeEditors(): void {
-    const returnFocus = this.returnFocus;
-    this.productMode.set(null);
-    this.planMode.set(null);
-    this.editorError.set('');
-    this.saving.set(false);
-    this.returnFocus = null;
-    if (returnFocus) setTimeout(() => returnFocus.focus());
-  }
-
-  protected trapDialogFocus(event: KeyboardEvent): void {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      this.closeEditors();
-      return;
-    }
-    if (event.key !== 'Tab') return;
-    const dialog = this.editorDialog?.nativeElement;
-    if (!dialog) return;
-    const controls = Array.from(
-      dialog.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])',
-      ),
-    );
-    if (!controls.length) return;
-    const first = controls[0];
-    const last = controls[controls.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  }
-
-  protected formatPrice(plan: Plan): string {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: plan.currency,
-    }).format(plan.price_minor / 100);
-  }
-
-  private minorUnits(value: string): number | null {
-    if (!/^\d+(?:\.\d{1,2})?$/.test(value)) return null;
-    const [whole, fraction = ''] = value.split('.');
-    const amount = Number(whole) * 100 + Number(fraction.padEnd(2, '0'));
-    return Number.isSafeInteger(amount) ? amount : null;
-  }
-
-  private rememberFocus(): void {
-    this.returnFocus = document.activeElement as HTMLElement | null;
-  }
-
-  private focusEditor(): void {
-    setTimeout(() => {
-      this.editorDialog?.nativeElement
-        .querySelector<HTMLElement>(
-          'input:not([disabled]), button:not([disabled])',
-        )
-        ?.focus();
-    });
-  }
-
-  private messageFor(error: unknown): string {
-    if (!(error instanceof HttpErrorResponse))
-      return 'The catalogue request failed. Please try again.';
-    const serverMessage =
-      typeof error.error?.error === 'string' ? error.error.error : '';
-    if (error.status === 401)
-      return 'Your admin session has expired. Sign in again.';
-    if (error.status === 403)
-      return 'You do not have permission to manage the catalogue.';
-    if (error.status === 404)
-      return 'The selected catalogue record no longer exists.';
-    if (error.status === 409)
-      return (
-        serverMessage ||
-        'This record changed or already exists. Reload and try again.'
-      );
-    if (error.status === 429)
-      return 'Too many changes were submitted. Wait briefly and try again.';
-    return serverMessage || 'The catalogue request failed. Please try again.';
+  private readSort(value: string | null): ProductSort {
+    return value === 'name' ||
+      value === 'status' ||
+      value === 'created_at' ||
+      value === 'updated_at'
+      ? value
+      : 'slug';
   }
 }

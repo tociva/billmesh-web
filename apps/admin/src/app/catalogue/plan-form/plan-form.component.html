@@ -1,0 +1,111 @@
+<main class="catalogue-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Catalogue plan</p>
+      <h2>{{ editMode ? 'Edit plan' : 'Create plan' }}</h2>
+      <p>Configure pricing, credits, and application entitlements.</p>
+    </div>
+    <tng-button type="button" appearance="outline" (click)="back()"
+      >Back</tng-button
+    >
+  </header>
+
+  <tng-card variant="outline" padding="lg">
+    @if (loading()) {
+      <p class="state" role="status">Loading plan…</p>
+    } @else {
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <div class="form-grid">
+          <label>
+            <span>Slug</span>
+            <tng-input
+              tngAngularForms
+              formControlName="slug"
+              ariaLabel="Plan slug"
+              autocomplete="off"
+              fullWidth
+            />
+          </label>
+          <label>
+            <span>Name</span>
+            <tng-input
+              tngAngularForms
+              formControlName="name"
+              ariaLabel="Plan name"
+              autocomplete="off"
+              fullWidth
+            />
+          </label>
+          <label>
+            <span>Price</span>
+            <tng-input
+              tngAngularForms
+              formControlName="price"
+              ariaLabel="Plan price"
+              inputmode="decimal"
+              placeholder="0.00"
+              fullWidth
+            />
+          </label>
+          <label>
+            <span>Currency</span>
+            <tng-input
+              tngAngularForms
+              formControlName="currency"
+              ariaLabel="Currency"
+              maxlength="3"
+              fullWidth
+            />
+          </label>
+          <label>
+            <span>Billing interval</span>
+            <tng-select
+              aria-label="Billing interval"
+              [options]="billingIntervalOptions"
+              [getOptionLabel]="getBillingIntervalLabel"
+              [getOptionValue]="getBillingIntervalValue"
+              [value]="form.controls.billingInterval.value"
+              (valueChange)="setBillingInterval($event)"
+            />
+          </label>
+          <label>
+            <span>Included credits</span>
+            <tng-input
+              tngAngularForms
+              formControlName="includedCredits"
+              ariaLabel="Included credits"
+              type="number"
+              min="0"
+              step="1"
+              fullWidth
+            />
+          </label>
+        </div>
+        <label>
+          <span>Entitlements JSON</span>
+          <textarea
+            formControlName="entitlements"
+            rows="9"
+            spellcheck="false"
+          ></textarea>
+        </label>
+        @if (error()) {
+          <p class="notice notice--error" role="alert">{{ error() }}</p>
+        }
+        <div class="form-actions">
+          <tng-button type="button" appearance="outline" (click)="back()"
+            >Cancel</tng-button
+          >
+          <tng-button
+            type="submit"
+            appearance="solid"
+            tone="primary"
+            [disabled]="saving() || form.invalid"
+          >
+            {{ saving() ? 'Saving…' : 'Save plan' }}
+          </tng-button>
+        </div>
+      </form>
+    }
+  </tng-card>
+</main>

@@ -1,0 +1,58 @@
+<tng-popover
+  align="end"
+  side="bottom"
+  [ariaLabel]="ariaLabel()"
+  [open]="open()"
+  [triggerLabel]="triggerLabel()"
+  (openChange)="open.set($event)"
+>
+  <form (submit)="apply($event)">
+    <header>
+      <strong>{{ title() }}</strong>
+    </header>
+
+    <div class="filter-fields">
+      @for (field of fields(); track field.id) {
+        <label>
+          <span>{{ field.label }}</span>
+          @if (field.type === 'enum') {
+            <tng-select
+              [attr.aria-label]="field.label"
+              [placeholder]="field.placeholder ?? 'Any'"
+              [options]="field.options ?? []"
+              [getOptionLabel]="getOptionLabel"
+              [getOptionValue]="getOptionValue"
+              [trackBy]="trackOption"
+              [value]="fieldValue(field.id) || null"
+              (valueChange)="updateField(field.id, $event)"
+            />
+          } @else {
+            <tng-input
+              type="search"
+              [ariaLabel]="field.label"
+              [placeholder]="field.placeholder ?? field.label"
+              [value]="fieldValue(field.id)"
+              (valueChange)="updateField(field.id, $event)"
+            />
+          }
+        </label>
+      }
+    </div>
+
+    <footer>
+      <tng-button type="button" appearance="ghost" (click)="clear()">
+        Clear
+      </tng-button>
+      <tng-button
+        type="button"
+        appearance="outline"
+        (click)="open.set(false)"
+      >
+        Close
+      </tng-button>
+      <tng-button type="submit" appearance="solid" tone="primary">
+        Apply
+      </tng-button>
+    </footer>
+  </form>
+</tng-popover>
