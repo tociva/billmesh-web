@@ -49,12 +49,19 @@
           </label>
           <label>
             <span>Currency</span>
-            <tng-input
-              tngAngularForms
-              formControlName="currency"
+            <tng-autocomplete
+              placeholder="Search for a currency"
               ariaLabel="Currency"
-              maxlength="3"
-              fullWidth
+              [options]="filteredCurrencies()"
+              [value]="form.controls.currency.value"
+              [getOptionValue]="currencyOptionValue"
+              [getOptionLabel]="currencyOptionLabel"
+              [trackBy]="currencyTrackBy"
+              [invalid]="
+                form.controls.currency.invalid && form.controls.currency.touched
+              "
+              (valueChange)="selectCurrency($event)"
+              (queryChange)="onCurrencyQueryChange($event)"
             />
           </label>
           <label>
