@@ -1,0 +1,97 @@
+<div class="admin-shell">
+  <header class="workspace-header">
+    <a class="brand" routerLink="/app" aria-label="Billmesh Admin home">
+      <span class="brand-mark" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+      </span>
+      <span class="brand-copy">
+        <strong>Billmesh</strong>
+        <small>Admin</small>
+      </span>
+    </a>
+
+    <div class="page-context">
+      <h1>{{ currentPageTitle() }}</h1>
+      <nav aria-label="Breadcrumb">
+        <a routerLink="/app">Home</a>
+        <span aria-hidden="true">/</span>
+        <strong>{{ currentPageTitle() }}</strong>
+      </nav>
+    </div>
+
+    <div class="header-actions">
+      <span class="session-state">
+        <span class="status-dot" aria-hidden="true"></span>
+        Secure session
+      </span>
+
+      <div class="profile-menu">
+        <button
+          class="profile-trigger"
+          type="button"
+          id="admin-profile-menu-trigger"
+          aria-label="Open admin account menu"
+          [tngMenuTriggerFor]="adminProfileMenu"
+        >
+          <tng-avatar [fallback]="displayName()" size="md" />
+          <span class="profile-copy">
+            <strong>{{ displayName() }}</strong>
+            <small>{{ roleLabel() }}</small>
+          </span>
+        </button>
+
+        <tng-menu
+          #adminProfileMenu="tngMenu"
+          ariaLabel="Admin account options"
+          (tngMenuSelect)="onProfileMenuSelect($event)"
+        >
+          <div tngMenuGroupLabel>Session</div>
+          <button type="button" tngMenuItem tngMenuItemValue="settings">
+            Settings
+          </button>
+          <button type="button" tngMenuItem tngMenuItemValue="sign-out">
+            Sign out
+          </button>
+        </tng-menu>
+      </div>
+    </div>
+  </header>
+
+  <div class="workspace-body">
+    <aside class="workspace-sidebar" aria-label="Admin navigation">
+      <nav>
+        <p class="nav-label">Workspace</p>
+        @for (item of navItems; track item.path) {
+          <a
+            class="nav-item"
+            [class.nav-item--active]="isRouteActive(item.path)"
+            [attr.aria-current]="isRouteActive(item.path) ? 'page' : null"
+            [routerLink]="item.path"
+          >
+            <span class="nav-icon" aria-hidden="true">
+              {{ item.shortLabel }}
+            </span>
+            <span>
+              <strong>{{ item.label }}</strong>
+              <small>{{ item.description }}</small>
+            </span>
+          </a>
+        }
+      </nav>
+
+      <div class="sidebar-footer">
+        <span class="sidebar-footer-mark" aria-hidden="true">B</span>
+        <p>
+          <strong>Protected by Billmesh BFF</strong>
+          <span>Credentials stay on the server.</span>
+        </p>
+      </div>
+    </aside>
+
+    <div class="route-content">
+      <router-outlet />
+    </div>
+  </div>
+</div>

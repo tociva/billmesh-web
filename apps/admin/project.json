@@ -4,6 +4,13 @@
   "projectType": "application",
   "prefix": "billmesh",
   "sourceRoot": "apps/admin/src",
+  "generators": {
+    "@nx/angular:component": {
+      "inlineTemplate": false,
+      "inlineStyle": false,
+      "style": "css"
+    }
+  },
   "cli": {
     "cache": {
       "enabled": false

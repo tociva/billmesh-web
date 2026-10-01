@@ -5,7 +5,8 @@ import { AdminThemeService } from './core/theme/admin-theme.service';
 @Component({
   selector: 'billmesh-root',
   imports: [RouterOutlet],
-  template: '<router-outlet />',
+  templateUrl: './app.component.html',
+  styleUrl: './app.component.css',
 })
 export class AppComponent {
   constructor() {

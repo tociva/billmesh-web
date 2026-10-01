@@ -6,72 +6,8 @@ import { AuthNoticeCardComponent, type AuthNotice } from '@billmesh/ui';
 @Component({
   selector: 'billmesh-admin-landing',
   imports: [AuthNoticeCardComponent],
-  template: `
-    <main>
-      <div class="brand">
-        <span>Billmesh Operations</span>
-        <h1>Administer billing with confidence.</h1>
-        <p>
-          Internal catalogue, account, entitlement, and payment operations are
-          isolated behind a dedicated IdNest client and BFF session.
-        </p>
-      </div>
-      <billmesh-auth-notice-card
-        [notice]="notice()"
-        (action)="handleAction()"
-      />
-    </main>
-  `,
-  styles: `
-    :host {
-      display: grid;
-      min-height: 100vh;
-      place-items: center;
-      padding: 1.5rem;
-      background:
-        linear-gradient(
-          135deg,
-          color-mix(in srgb, var(--tng-semantic-accent-brand) 14%, transparent),
-          transparent 42%
-        ),
-        var(--tng-semantic-background-canvas);
-    }
-
-    main {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(20rem, 34rem);
-      align-items: center;
-      gap: clamp(2rem, 8vw, 8rem);
-      width: min(72rem, 100%);
-    }
-
-    .brand span {
-      color: var(--tng-semantic-accent-brand);
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    h1 {
-      max-width: 13ch;
-      margin-block: 0.75rem 1rem;
-      font-size: clamp(2.5rem, 7vw, 5rem);
-      line-height: 0.98;
-    }
-
-    p {
-      max-width: 48rem;
-      color: var(--tng-semantic-foreground-secondary);
-      font-size: 1.1rem;
-      line-height: 1.6;
-    }
-
-    @media (max-width: 52rem) {
-      main {
-        grid-template-columns: 1fr;
-      }
-    }
-  `,
+  templateUrl: './landing.component.html',
+  styleUrl: './landing.component.css',
 })
 export class LandingComponent {
   private readonly authStore = inject(AuthStore);

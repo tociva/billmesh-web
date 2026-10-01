@@ -1,0 +1,24 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.settings-page {
+  display: grid;
+  gap: 1.25rem;
+  width: min(48rem, 100%);
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 2rem);
+}
+
+header h2,
+header p,
+.appearance-controls p {
+  margin: 0;
+}
+
+header,
+.appearance-controls {
+  display: grid;
+  gap: 1rem;
+}
