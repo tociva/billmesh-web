@@ -1,6 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import { AuthStore } from '@billmesh/auth';
-import { TngButtonComponent, TngTagComponent } from '@tailng-ui/components';
+import { TngTagComponent } from '@tailng-ui/components';
 
 interface AdminArea {
   readonly description: string;
@@ -46,237 +46,142 @@ const ADMIN_AREAS: readonly AdminArea[] = [
 
 @Component({
   selector: 'billmesh-admin-workspace',
-  imports: [TngButtonComponent, TngTagComponent],
+  imports: [TngTagComponent],
   template: `
-    <div class="workspace-shell">
-      <header class="workspace-header">
-        <a class="brand" href="/app" aria-label="Billmesh Admin home">
-          <span class="brand-mark" aria-hidden="true">
-            <span></span>
-            <span></span>
-            <span></span>
-          </span>
-          <span class="brand-copy">
-            <strong>Billmesh</strong>
-            <small>Admin</small>
-          </span>
-        </a>
-
-        <div class="page-context">
-          <h1>Overview</h1>
-          <nav aria-label="Breadcrumb">
-            <span>Home</span>
-            <span aria-hidden="true">/</span>
-            <strong>Overview</strong>
-          </nav>
+    <main id="overview" tabindex="-1">
+      <section class="welcome" aria-labelledby="welcome-title">
+        <div>
+          <p class="eyebrow">Admin workspace</p>
+          <h2 id="welcome-title">{{ greeting() }}, {{ firstName() }}.</h2>
+          <p>
+            Manage the billing catalogue and keep customer operations moving
+            from one secure workspace.
+          </p>
         </div>
+        <div class="welcome-badge" aria-label="Workspace status">
+          <span class="pulse" aria-hidden="true"></span>
+          <span>
+            <small>Workspace status</small>
+            <strong>Ready for operations</strong>
+          </span>
+        </div>
+      </section>
 
-        <div class="session-menu">
-          <span class="session-state">
-            <span class="status-dot" aria-hidden="true"></span>
-            Secure session
-          </span>
-          <span class="avatar" aria-hidden="true">{{ initials() }}</span>
-          <span class="session-copy">
-            <strong>{{ displayName() }}</strong>
-            <small>{{ roleLabel() }}</small>
-          </span>
-          <tng-button
-            type="button"
-            appearance="outline"
-            tone="neutral"
-            (click)="logout()"
+      <section class="summary-grid" aria-label="Access summary">
+        <article>
+          <span class="summary-icon summary-icon--green" aria-hidden="true"
+            >✓</span
           >
-            Sign out
-          </tng-button>
-        </div>
-      </header>
-
-      <div class="workspace-body">
-        <aside class="workspace-sidebar" aria-label="Admin navigation">
-          <nav>
-            <p class="nav-label">Workspace</p>
-            <a
-              class="nav-item nav-item--active"
-              href="#overview"
-              aria-current="page"
-            >
-              <span class="nav-icon" aria-hidden="true">01</span>
-              <span>
-                <strong>Overview</strong>
-                <small>Admin home</small>
-              </span>
-            </a>
-
-            <p class="nav-label">Administration</p>
-            @for (area of adminAreas; track area.id; let index = $index) {
-              <a
-                class="nav-item"
-                [href]="
-                  area.id === 'catalogue' ? '/app/catalogue' : '#' + area.id
-                "
-              >
-                <span class="nav-icon" aria-hidden="true"
-                  >0{{ index + 2 }}</span
-                >
-                <span>
-                  <strong>{{ area.label }}</strong>
-                  <small>{{ area.description }}</small>
-                </span>
-              </a>
-            }
-          </nav>
-
-          <div class="sidebar-footer">
-            <span class="sidebar-footer-mark" aria-hidden="true">B</span>
-            <p>
-              <strong>Protected by Billmesh BFF</strong>
-              <span>Credentials stay on the server.</span>
-            </p>
+          <div>
+            <small>Session</small>
+            <strong>Authenticated</strong>
+            <span>Server-managed BFF session</span>
           </div>
-        </aside>
+        </article>
+        <article>
+          <span class="summary-icon summary-icon--violet" aria-hidden="true"
+            >A</span
+          >
+          <div>
+            <small>Access level</small>
+            <strong>{{ roleLabel() }}</strong>
+            <span>Permission-scoped access</span>
+          </div>
+        </article>
+        <article>
+          <span class="summary-icon summary-icon--blue" aria-hidden="true"
+            >#</span
+          >
+          <div>
+            <small>Granted permissions</small>
+            <strong>{{ permissionCount() }}</strong>
+            <span>Active for this session</span>
+          </div>
+        </article>
+      </section>
 
-        <main id="overview" tabindex="-1">
-          <section class="welcome" aria-labelledby="welcome-title">
-            <div>
-              <p class="eyebrow">Admin workspace</p>
-              <h2 id="welcome-title">{{ greeting() }}, {{ firstName() }}.</h2>
-              <p>
-                Manage the billing catalogue and keep customer operations moving
-                from one secure workspace.
-              </p>
-            </div>
-            <div class="welcome-badge" aria-label="Workspace status">
-              <span class="pulse" aria-hidden="true"></span>
-              <span>
-                <small>Workspace status</small>
-                <strong>Ready for operations</strong>
+      <section class="section-block" aria-labelledby="areas-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Administration</p>
+            <h2 id="areas-title">Billing operations</h2>
+            <p>Core areas available to the Billmesh operations team.</p>
+          </div>
+          <tng-tag tone="neutral">{{ adminAreas.length }} areas</tng-tag>
+        </div>
+
+        <div class="area-grid">
+          @for (area of adminAreas; track area.id) {
+            <article class="area-card" [id]="area.id">
+              <span
+                [class]="'area-monogram area-monogram--' + area.tone"
+                aria-hidden="true"
+              >
+                {{ area.shortLabel }}
               </span>
+              <div>
+                <h3>{{ area.label }}</h3>
+                <p>{{ area.description }}</p>
+              </div>
+              <span class="area-status">
+                <span aria-hidden="true"></span>
+                Secured
+              </span>
+            </article>
+          }
+        </div>
+      </section>
+
+      <section class="detail-grid">
+        <article class="access-panel" id="security">
+          <div class="section-heading section-heading--compact">
+            <div>
+              <p class="eyebrow">Security & access</p>
+              <h2>Your admin session</h2>
             </div>
-          </section>
+            <span class="verified-badge">Verified</span>
+          </div>
 
-          <section class="summary-grid" aria-label="Access summary">
-            <article>
-              <span class="summary-icon summary-icon--green" aria-hidden="true"
-                >✓</span
-              >
-              <div>
-                <small>Session</small>
-                <strong>Authenticated</strong>
-                <span>Server-managed BFF session</span>
-              </div>
-            </article>
-            <article>
-              <span class="summary-icon summary-icon--violet" aria-hidden="true"
-                >A</span
-              >
-              <div>
-                <small>Access level</small>
-                <strong>{{ roleLabel() }}</strong>
-                <span>Permission-scoped access</span>
-              </div>
-            </article>
-            <article>
-              <span class="summary-icon summary-icon--blue" aria-hidden="true"
-                >#</span
-              >
-              <div>
-                <small>Granted permissions</small>
-                <strong>{{ permissionCount() }}</strong>
-                <span>Active for this session</span>
-              </div>
-            </article>
-          </section>
-
-          <section class="section-block" aria-labelledby="areas-title">
-            <div class="section-heading">
-              <div>
-                <p class="eyebrow">Administration</p>
-                <h2 id="areas-title">Billing operations</h2>
-                <p>Core areas available to the Billmesh operations team.</p>
-              </div>
-              <tng-tag tone="neutral">{{ adminAreas.length }} areas</tng-tag>
+          <dl>
+            <div>
+              <dt>Signed in as</dt>
+              <dd>
+                {{ authStore.currentUser()?.email ?? 'Billmesh administrator' }}
+              </dd>
             </div>
+            <div>
+              <dt>Authorization</dt>
+              <dd>{{ roleLabel() }}</dd>
+            </div>
+            <div>
+              <dt>Session type</dt>
+              <dd>Opaque browser session</dd>
+            </div>
+          </dl>
+        </article>
 
-            <div class="area-grid">
-              @for (area of adminAreas; track area.id) {
-                <article class="area-card" [id]="area.id">
-                  <span
-                    [class]="'area-monogram area-monogram--' + area.tone"
-                    aria-hidden="true"
-                  >
-                    {{ area.shortLabel }}
-                  </span>
-                  <div>
-                    <h3>{{ area.label }}</h3>
-                    <p>{{ area.description }}</p>
-                  </div>
-                  <span class="area-status">
-                    <span aria-hidden="true"></span>
-                    Secured
-                  </span>
-                </article>
+        <article class="permissions-panel">
+          <div class="section-heading section-heading--compact">
+            <div>
+              <p class="eyebrow">Authorization</p>
+              <h2>Active permissions</h2>
+            </div>
+          </div>
+
+          @if (authStore.permissions().length) {
+            <div class="permission-list" aria-label="Granted permissions">
+              @for (permission of authStore.permissions(); track permission) {
+                <code>{{ permission }}</code>
               }
             </div>
-          </section>
-
-          <section class="detail-grid">
-            <article class="access-panel" id="security">
-              <div class="section-heading section-heading--compact">
-                <div>
-                  <p class="eyebrow">Security & access</p>
-                  <h2>Your admin session</h2>
-                </div>
-                <span class="verified-badge">Verified</span>
-              </div>
-
-              <dl>
-                <div>
-                  <dt>Signed in as</dt>
-                  <dd>
-                    {{
-                      authStore.currentUser()?.email ?? 'Billmesh administrator'
-                    }}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Authorization</dt>
-                  <dd>{{ roleLabel() }}</dd>
-                </div>
-                <div>
-                  <dt>Session type</dt>
-                  <dd>Opaque browser session</dd>
-                </div>
-              </dl>
-            </article>
-
-            <article class="permissions-panel">
-              <div class="section-heading section-heading--compact">
-                <div>
-                  <p class="eyebrow">Authorization</p>
-                  <h2>Active permissions</h2>
-                </div>
-              </div>
-
-              @if (authStore.permissions().length) {
-                <div class="permission-list" aria-label="Granted permissions">
-                  @for (
-                    permission of authStore.permissions();
-                    track permission
-                  ) {
-                    <code>{{ permission }}</code>
-                  }
-                </div>
-              } @else {
-                <p class="empty-state">
-                  No explicit permissions were returned for this session.
-                </p>
-              }
-            </article>
-          </section>
-        </main>
-      </div>
-    </div>
+          } @else {
+            <p class="empty-state">
+              No explicit permissions were returned for this session.
+            </p>
+          }
+        </article>
+      </section>
+    </main>
   `,
   styles: `
     :host {
@@ -632,7 +537,6 @@ const ADMIN_AREAS: readonly AdminArea[] = [
     }
 
     main {
-      grid-column: 2;
       width: min(100%, 82rem);
       margin: 0 auto;
       padding: clamp(1.5rem, 3vw, 2.75rem);
@@ -1081,14 +985,6 @@ export class WorkspaceComponent {
     () => this.displayName().split(/\s+/)[0] ?? 'Administrator',
   );
 
-  protected readonly initials = computed(() => {
-    const parts = this.displayName().split(/\s+/).filter(Boolean);
-    return parts
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase())
-      .join('');
-  });
-
   protected readonly permissionCount = computed(
     () => this.authStore.permissions().length,
   );
@@ -1103,8 +999,4 @@ export class WorkspaceComponent {
     if (hour < 18) return 'Good afternoon';
     return 'Good evening';
   });
-
-  protected logout(): void {
-    void this.authStore.logout();
-  }
 }

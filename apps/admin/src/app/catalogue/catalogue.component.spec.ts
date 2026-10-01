@@ -150,7 +150,9 @@ describe('CatalogueComponent', () => {
 
   it('ADMUI-006 opens a validated Product create form', () => {
     const create = Array.from(
-      fixture.nativeElement.querySelectorAll('button'),
+      (
+        fixture.nativeElement as HTMLElement
+      ).querySelectorAll<HTMLButtonElement>('button'),
     ).find((button) => button.textContent?.includes('Create product')) as
       HTMLButtonElement | undefined;
     create?.click();
@@ -178,7 +180,9 @@ describe('CatalogueComponent', () => {
       ),
     );
     const create = Array.from(
-      fixture.nativeElement.querySelectorAll('button'),
+      (
+        fixture.nativeElement as HTMLElement
+      ).querySelectorAll<HTMLButtonElement>('button'),
     ).find((button) => button.textContent?.includes('Create product')) as
       HTMLButtonElement | undefined;
     create?.click();
@@ -225,7 +229,9 @@ describe('CatalogueComponent', () => {
     productButton.click();
     fixture.detectChanges();
     const edit = Array.from(
-      fixture.nativeElement.querySelectorAll('.detail-panel button'),
+      (
+        fixture.nativeElement as HTMLElement
+      ).querySelectorAll<HTMLButtonElement>('.detail-panel button'),
     ).find((button) => button.textContent?.includes('Edit')) as
       HTMLButtonElement | undefined;
     edit?.click();
@@ -252,7 +258,9 @@ describe('CatalogueComponent', () => {
     productButton.click();
     fixture.detectChanges();
     const archive = Array.from(
-      fixture.nativeElement.querySelectorAll('.detail-panel button'),
+      (
+        fixture.nativeElement as HTMLElement
+      ).querySelectorAll<HTMLButtonElement>('.detail-panel button'),
     ).find((button) => button.textContent?.includes('Archive')) as
       HTMLButtonElement | undefined;
     archive?.click();
@@ -285,7 +293,9 @@ describe('CatalogueComponent', () => {
     productButton.click();
     fixture.detectChanges();
     const createPlan = Array.from(
-      fixture.nativeElement.querySelectorAll('.detail-panel button'),
+      (
+        fixture.nativeElement as HTMLElement
+      ).querySelectorAll<HTMLButtonElement>('.detail-panel button'),
     ).find((button) => button.textContent?.includes('Create plan')) as
       HTMLButtonElement | undefined;
     createPlan?.click();
@@ -322,7 +332,9 @@ describe('CatalogueComponent', () => {
 
   it('ADMUI-014 closes an editor with Escape', () => {
     const create = Array.from(
-      fixture.nativeElement.querySelectorAll('button'),
+      (
+        fixture.nativeElement as HTMLElement
+      ).querySelectorAll<HTMLButtonElement>('button'),
     ).find((button) => button.textContent?.includes('Create product')) as
       HTMLButtonElement | undefined;
     create?.click();

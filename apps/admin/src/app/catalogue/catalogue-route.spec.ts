@@ -2,11 +2,14 @@ import { routes } from '../app.routes';
 
 describe('Admin catalogue route', () => {
   it('ADMUI-012 requires authentication and billing:admin guards', () => {
-    const route = routes.find(
-      (candidate) => candidate.path === 'app/catalogue',
+    const appRoute = routes.find((candidate) => candidate.path === 'app');
+    const catalogueRoute = appRoute?.children?.find(
+      (candidate) => candidate.path === 'catalogue',
     );
-    expect(route).toBeDefined();
-    expect(route?.canActivate).toHaveLength(2);
-    expect(route?.loadComponent).toBeTypeOf('function');
+
+    expect(appRoute).toBeDefined();
+    expect(appRoute?.canActivate).toHaveLength(2);
+    expect(appRoute?.loadComponent).toBeTypeOf('function');
+    expect(catalogueRoute?.loadComponent).toBeTypeOf('function');
   });
 });

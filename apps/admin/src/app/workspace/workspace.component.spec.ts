@@ -6,11 +6,7 @@ import { WorkspaceComponent } from './workspace.component';
 
 describe('WorkspaceComponent', () => {
   let fixture: ComponentFixture<WorkspaceComponent>;
-  const logout = vi.fn();
-
   beforeEach(async () => {
-    logout.mockReset();
-
     await TestBed.configureTestingModule({
       imports: [WorkspaceComponent],
       providers: [
@@ -23,7 +19,6 @@ describe('WorkspaceComponent', () => {
               name: 'Avery Operator',
               subject: 'user-1',
             }),
-            logout,
             permissions: signal([
               'billing:read',
               'billing:write',
@@ -47,18 +42,5 @@ describe('WorkspaceComponent', () => {
     expect(text).toContain('Credits & wallets');
     expect(text).toContain('3');
     expect(text).toContain('Administrator');
-  });
-
-  it('signs out from the workspace header', () => {
-    const button = Array.from(
-      fixture.nativeElement.querySelectorAll('button'),
-    ).find((item) =>
-      (item as HTMLElement).textContent?.includes('Sign out'),
-    ) as HTMLButtonElement | undefined;
-
-    expect(button).toBeTruthy();
-    button?.click();
-
-    expect(logout).toHaveBeenCalledOnce();
   });
 });

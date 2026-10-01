@@ -12,20 +12,29 @@ export const routes: Routes = [
       ),
   },
   {
-    path: 'app/catalogue',
-    canActivate: [authenticatedGuard, permissionGuard('billing:admin')],
-    loadComponent: () =>
-      import('./catalogue/catalogue.component').then(
-        (module) => module.CatalogueComponent,
-      ),
-  },
-  {
     path: 'app',
     canActivate: [authenticatedGuard, permissionGuard('billing:admin')],
     loadComponent: () =>
-      import('./workspace/workspace.component').then(
-        (module) => module.WorkspaceComponent,
+      import('./admin-shell/admin-shell.component').then(
+        (module) => module.AdminShellComponent,
       ),
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        loadComponent: () =>
+          import('./workspace/workspace.component').then(
+            (module) => module.WorkspaceComponent,
+          ),
+      },
+      {
+        path: 'catalogue',
+        loadComponent: () =>
+          import('./catalogue/catalogue.component').then(
+            (module) => module.CatalogueComponent,
+          ),
+      },
+    ],
   },
   {
     path: 'auth/error',

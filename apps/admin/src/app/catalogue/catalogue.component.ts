@@ -1,13 +1,12 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
-  ElementRef,
   ViewChild,
   inject,
   signal,
+  type ElementRef,
 } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { CatalogueAdminService } from '@billmesh/api-client';
 import type { Plan, Product } from '@billmesh/domain';
 
@@ -15,12 +14,11 @@ type EditorMode = 'create' | 'edit' | null;
 
 @Component({
   selector: 'billmesh-admin-catalogue',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule],
   template: `
     <main class="catalogue-shell">
       <header class="page-header">
         <div>
-          <a routerLink="/app">← Admin overview</a>
           <p class="eyebrow">Catalogue</p>
           <h1>Products and subscription plans</h1>
           <p>
