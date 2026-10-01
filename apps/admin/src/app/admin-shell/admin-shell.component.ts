@@ -39,6 +39,12 @@ const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
     path: '/app/catalogue',
     shortLabel: '02',
   },
+  {
+    description: 'Appearance preferences',
+    label: 'Settings',
+    path: '/app/settings',
+    shortLabel: '03',
+  },
 ];
 
 @Component({
@@ -103,6 +109,9 @@ const ADMIN_NAV_ITEMS: readonly AdminNavItem[] = [
               (tngMenuSelect)="onProfileMenuSelect($event)"
             >
               <div tngMenuGroupLabel>Session</div>
+              <button type="button" tngMenuItem tngMenuItemValue="settings">
+                Settings
+              </button>
               <button type="button" tngMenuItem tngMenuItemValue="sign-out">
                 Sign out
               </button>
@@ -649,7 +658,10 @@ export class AdminShellComponent {
   }
 
   protected onProfileMenuSelect(event: TngMenuSelectEvent): void {
-    if (String(event.value) === 'sign-out') {
+    const value = String(event.value);
+    if (value === 'settings') {
+      void this.router.navigateByUrl('/app/settings');
+    } else if (value === 'sign-out') {
       void this.authStore.logout();
     }
   }

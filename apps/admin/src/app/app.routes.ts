@@ -34,6 +34,13 @@ export const routes: Routes = [
             (module) => module.CatalogueComponent,
           ),
       },
+      {
+        path: 'settings',
+        loadComponent: () =>
+          import('./settings/settings.component').then(
+            (module) => module.SettingsComponent,
+          ),
+      },
     ],
   },
   {

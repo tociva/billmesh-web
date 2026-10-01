@@ -679,13 +679,21 @@ const ADMIN_AREAS: readonly AdminArea[] = [
 
     .summary-icon--blue,
     .area-monogram--blue {
-      background: color-mix(in srgb, #3281e8 14%, transparent);
-      color: #3281e8;
+      background: color-mix(
+        in srgb,
+        var(--tng-semantic-accent-brand) 14%,
+        transparent
+      );
+      color: var(--tng-semantic-accent-brand);
     }
 
     .area-monogram--orange {
-      background: color-mix(in srgb, #e27a24 14%, transparent);
-      color: #e27a24;
+      background: color-mix(
+        in srgb,
+        var(--tng-semantic-accent-warning) 14%,
+        transparent
+      );
+      color: var(--tng-semantic-accent-warning);
     }
 
     .summary-grid article > div {

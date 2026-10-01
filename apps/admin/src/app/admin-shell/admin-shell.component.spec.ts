@@ -1,7 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import type { ComponentFixture } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { AuthStore } from '@billmesh/auth';
 import { AdminShellComponent } from './admin-shell.component';
 
@@ -50,12 +50,14 @@ describe('AdminShellComponent', () => {
     expect(compiled.querySelector('router-outlet')).not.toBeNull();
     expect(compiled.textContent).toContain('Overview');
     expect(compiled.textContent).toContain('Catalogue');
+    expect(compiled.textContent).toContain('Settings');
     expect(compiled.textContent).toContain('Avery Operator');
   });
 
   it.each([
     ['/app', 'Overview'],
     ['/app/catalogue', 'Catalogue'],
+    ['/app/settings', 'Settings'],
   ])('computes navigation state for %s', (path, title) => {
     const component = fixture.componentInstance as unknown as ShellInstance;
 
@@ -75,5 +77,18 @@ describe('AdminShellComponent', () => {
     component.onProfileMenuSelect({ value: 'sign-out' });
 
     expect(logout).toHaveBeenCalledOnce();
+  });
+
+  it('opens settings from the profile menu command', () => {
+    const component = fixture.componentInstance as unknown as ShellInstance;
+    const router = TestBed.inject(Router);
+    const navigate = vi
+      .spyOn(router, 'navigateByUrl')
+      .mockResolvedValueOnce(true);
+
+    component.onProfileMenuSelect({ value: 'settings' });
+
+    expect(navigate).toHaveBeenCalledWith('/app/settings');
+    expect(logout).not.toHaveBeenCalled();
   });
 });

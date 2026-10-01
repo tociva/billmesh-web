@@ -377,8 +377,8 @@ type EditorMode = 'create' | 'edit' | null;
     :host {
       display: block;
       min-height: 100dvh;
-      background: #f5f7fb;
-      color: #172033;
+      background: var(--tng-semantic-background-canvas);
+      color: var(--tng-semantic-foreground-primary);
     }
     * {
       box-sizing: border-box;
@@ -424,37 +424,37 @@ type EditorMode = 'create' | 'edit' | null;
     }
     .eyebrow {
       margin: 0 0 0.35rem;
-      color: #6654d9;
+      color: var(--tng-semantic-accent-brand);
       font-size: 0.75rem;
       font-weight: 800;
       letter-spacing: 0.12em;
       text-transform: uppercase;
     }
     a {
-      color: #5145b5;
+      color: var(--tng-semantic-accent-brand);
     }
     button {
-      border: 1px solid #ccd2df;
+      border: 1px solid var(--tng-semantic-border-default);
       border-radius: 0.55rem;
-      background: white;
+      background: var(--tng-semantic-background-surface);
       padding: 0.65rem 0.9rem;
       color: inherit;
     }
     button.primary {
-      border-color: #6654d9;
-      background: #6654d9;
-      color: white;
+      border-color: var(--tng-semantic-accent-brand);
+      background: var(--tng-semantic-accent-brand);
+      color: var(--tng-semantic-foreground-inverse);
     }
     button.danger {
-      color: #a22634;
+      color: var(--tng-semantic-accent-danger);
     }
     .toolbar {
       justify-content: flex-start;
       padding: 1rem;
       margin-bottom: 1rem;
-      border: 1px solid #dde2eb;
+      border: 1px solid var(--tng-semantic-border-subtle);
       border-radius: 0.8rem;
-      background: white;
+      background: var(--tng-semantic-background-surface);
     }
     label {
       display: grid;
@@ -466,9 +466,9 @@ type EditorMode = 'create' | 'edit' | null;
     select,
     textarea {
       width: 100%;
-      border: 1px solid #cbd2df;
+      border: 1px solid var(--tng-semantic-border-strong);
       border-radius: 0.5rem;
-      background: white;
+      background: var(--tng-semantic-background-surface);
       padding: 0.65rem 0.75rem;
       color: inherit;
     }
@@ -476,7 +476,8 @@ type EditorMode = 'create' | 'edit' | null;
     select:focus,
     textarea:focus,
     button:focus-visible {
-      outline: 3px solid #c8c2ff;
+      outline: 3px solid
+        color-mix(in srgb, var(--tng-semantic-focus-ring) 45%, transparent);
       outline-offset: 2px;
     }
     .catalogue-grid {
@@ -486,11 +487,16 @@ type EditorMode = 'create' | 'edit' | null;
       align-items: start;
     }
     .panel {
-      border: 1px solid #dde2eb;
+      border: 1px solid var(--tng-semantic-border-subtle);
       border-radius: 0.9rem;
-      background: white;
+      background: var(--tng-semantic-background-surface);
       padding: 1.2rem;
-      box-shadow: 0 10px 30px rgb(25 35 55 / 5%);
+      box-shadow: 0 10px 30px
+        color-mix(
+          in srgb,
+          var(--tng-semantic-foreground-primary) 5%,
+          transparent
+        );
     }
     .resource-list {
       display: grid;
@@ -506,8 +512,12 @@ type EditorMode = 'create' | 'edit' | null;
       text-align: left;
     }
     .resource-list button.selected {
-      border-color: #6654d9;
-      background: #f4f2ff;
+      border-color: var(--tng-semantic-accent-brand);
+      background: color-mix(
+        in srgb,
+        var(--tng-semantic-accent-brand) 9%,
+        transparent
+      );
     }
     .resource-list span:first-child,
     .plan-list article > div:first-child,
@@ -516,7 +526,7 @@ type EditorMode = 'create' | 'edit' | null;
       gap: 0.2rem;
     }
     small {
-      color: #667085;
+      color: var(--tng-semantic-foreground-muted);
     }
     .status {
       display: inline-flex;
@@ -526,12 +536,16 @@ type EditorMode = 'create' | 'edit' | null;
       font-weight: 750;
     }
     .status.active {
-      background: #e8f8ef;
-      color: #177245;
+      background: color-mix(
+        in srgb,
+        var(--tng-semantic-accent-success) 14%,
+        transparent
+      );
+      color: var(--tng-semantic-accent-success);
     }
     .status.archived {
-      background: #f0f1f4;
-      color: #596274;
+      background: var(--tng-semantic-background-muted);
+      color: var(--tng-semantic-foreground-secondary);
     }
     .pagination {
       margin-top: 1rem;
@@ -539,7 +553,7 @@ type EditorMode = 'create' | 'edit' | null;
     .plans-heading {
       margin-top: 1.5rem;
       padding-top: 1.5rem;
-      border-top: 1px solid #e4e7ee;
+      border-top: 1px solid var(--tng-semantic-border-subtle);
     }
     .plan-list {
       display: grid;
@@ -551,7 +565,7 @@ type EditorMode = 'create' | 'edit' | null;
       grid-template-columns: 1.6fr 1fr auto auto;
       gap: 1rem;
       align-items: center;
-      border: 1px solid #e0e4ec;
+      border: 1px solid var(--tng-semantic-border-subtle);
       border-radius: 0.7rem;
       padding: 0.85rem;
     }
@@ -560,7 +574,7 @@ type EditorMode = 'create' | 'edit' | null;
     }
     .state {
       padding: 2rem 1rem;
-      color: #667085;
+      color: var(--tng-semantic-foreground-muted);
       text-align: center;
     }
     .notice {
@@ -571,8 +585,12 @@ type EditorMode = 'create' | 'edit' | null;
       padding: 0.8rem 1rem;
     }
     .notice--error {
-      background: #fff0f1;
-      color: #8b1e2c;
+      background: color-mix(
+        in srgb,
+        var(--tng-semantic-accent-danger) 12%,
+        transparent
+      );
+      color: var(--tng-semantic-accent-danger);
     }
     .dialog-backdrop {
       position: fixed;
@@ -580,7 +598,11 @@ type EditorMode = 'create' | 'edit' | null;
       z-index: 20;
       display: grid;
       place-items: center;
-      background: rgb(16 24 40 / 45%);
+      background: color-mix(
+        in srgb,
+        var(--tng-semantic-foreground-primary) 45%,
+        transparent
+      );
       padding: 1rem;
     }
     .dialog {
@@ -588,9 +610,14 @@ type EditorMode = 'create' | 'edit' | null;
       max-height: calc(100dvh - 2rem);
       overflow: auto;
       border-radius: 0.9rem;
-      background: white;
+      background: var(--tng-semantic-background-surface);
       padding: 1.25rem;
-      box-shadow: 0 24px 80px rgb(0 0 0 / 25%);
+      box-shadow: 0 24px 80px
+        color-mix(
+          in srgb,
+          var(--tng-semantic-foreground-primary) 25%,
+          transparent
+        );
     }
     form {
       display: grid;
@@ -606,7 +633,7 @@ type EditorMode = 'create' | 'edit' | null;
       justify-content: flex-end;
     }
     .field-error {
-      color: #a22634;
+      color: var(--tng-semantic-accent-danger);
     }
     .visually-hidden {
       position: absolute;
