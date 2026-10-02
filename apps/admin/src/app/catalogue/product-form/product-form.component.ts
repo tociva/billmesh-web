@@ -1,8 +1,8 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CatalogueAdminService } from '@billmesh/api-client';
-import type { Product } from '@billmesh/domain';
+import type { EntitlementSchema, Product } from '@billmesh/domain';
 import {
   TngButtonComponent,
   TngCardComponent,
@@ -10,6 +10,7 @@ import {
   TngInputComponent,
 } from '@tailng-ui/components';
 import { catalogueMessage, catalogueReturnUrl } from '../catalogue.helpers';
+import { EntitlementSchemaEditorComponent } from '../entitlement-schema-editor/entitlement-schema-editor.component';
 
 @Component({
   selector: 'billmesh-product-form',
@@ -19,11 +20,14 @@ import { catalogueMessage, catalogueReturnUrl } from '../catalogue.helpers';
     TngCardComponent,
     TngInputAngularFormsAdapter,
     TngInputComponent,
+    EntitlementSchemaEditorComponent,
   ],
   templateUrl: './product-form.component.html',
   styleUrl: '../catalogue.shared.css',
 })
 export class ProductFormComponent {
+  @ViewChild(EntitlementSchemaEditorComponent)
+  private schemaEditor?: EntitlementSchemaEditorComponent;
   private readonly catalogue = inject(CatalogueAdminService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
@@ -35,6 +39,7 @@ export class ProductFormComponent {
   protected readonly saving = signal(false);
   protected readonly error = signal('');
   protected readonly product = signal<Product | null>(null);
+  protected readonly emptySchema: EntitlementSchema = { fields: [] };
   protected readonly title = computed(() =>
     this.editMode ? 'Edit product' : 'Create product',
   );
@@ -57,8 +62,9 @@ export class ProductFormComponent {
   }
 
   protected submit(): void {
-    if (this.form.invalid) {
+    if (this.form.invalid || !this.schemaEditor?.valid) {
       this.form.markAllAsTouched();
+      this.schemaEditor?.markAllAsTouched();
       return;
     }
     this.saving.set(true);
@@ -69,11 +75,13 @@ export class ProductFormComponent {
           version: this.product()!.version,
           name: value.name.trim(),
           description: value.description.trim(),
+          entitlement_schema: this.schemaEditor.value(),
         })
       : this.catalogue.createProduct({
           slug: value.slug.trim(),
           name: value.name.trim(),
           description: value.description.trim(),
+          entitlement_schema: this.schemaEditor.value(),
         });
     request.subscribe({
       next: (product) => {
@@ -87,6 +95,12 @@ export class ProductFormComponent {
         this.saving.set(false);
       },
     });
+  }
+
+  protected canSave(): boolean {
+    return (
+      !this.saving() && this.form.valid && Boolean(this.schemaEditor?.valid)
+    );
   }
 
   protected back(): void {

@@ -1,8 +1,8 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CatalogueAdminService } from '@billmesh/api-client';
-import type { Plan } from '@billmesh/domain';
+import type { Plan, Product } from '@billmesh/domain';
 import {
   TngAutocompleteComponent,
   TngButtonComponent,
@@ -11,12 +11,14 @@ import {
   TngInputComponent,
   TngSelectComponent,
 } from '@tailng-ui/components';
+import { forkJoin } from 'rxjs';
 import {
   catalogueMessage,
   catalogueReturnUrl,
   parseMinorUnits,
 } from '../catalogue.helpers';
 import { currencyOptions, type CurrencyOption } from '../currency-options';
+import { EntitlementValuesComponent } from '../entitlement-values/entitlement-values.component';
 
 @Component({
   selector: 'billmesh-plan-form',
@@ -28,11 +30,14 @@ import { currencyOptions, type CurrencyOption } from '../currency-options';
     TngInputAngularFormsAdapter,
     TngInputComponent,
     TngSelectComponent,
+    EntitlementValuesComponent,
   ],
   templateUrl: './plan-form.component.html',
   styleUrl: '../catalogue.shared.css',
 })
 export class PlanFormComponent {
+  @ViewChild(EntitlementValuesComponent)
+  private entitlementValues?: EntitlementValuesComponent;
   private readonly catalogue = inject(CatalogueAdminService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
@@ -41,10 +46,12 @@ export class PlanFormComponent {
   protected readonly productId = this.route.snapshot.paramMap.get('productId')!;
   protected readonly planId = this.route.snapshot.paramMap.get('planId');
   protected readonly editMode = this.planId !== null;
-  protected readonly loading = signal(this.editMode);
+  protected readonly loading = signal(true);
   protected readonly saving = signal(false);
   protected readonly error = signal('');
   protected readonly plan = signal<Plan | null>(null);
+  protected readonly product = signal<Product | null>(null);
+  protected readonly emptyEntitlements: Readonly<Record<string, unknown>> = {};
   protected readonly currencyQuery = signal('');
   protected readonly currencyOptionValue = (currency: CurrencyOption): string =>
     currency.code;
@@ -95,11 +102,10 @@ export class PlanFormComponent {
       0,
       [Validators.required, Validators.min(0), Validators.pattern(/^\d+$/)],
     ],
-    entitlements: ['{}', Validators.required],
   });
 
   constructor() {
-    if (this.planId) this.loadPlan(this.planId);
+    this.load();
   }
 
   protected setBillingInterval(value: unknown): void {
@@ -122,43 +128,49 @@ export class PlanFormComponent {
   }
 
   protected submit(): void {
-    if (this.form.invalid) {
+    if (this.form.invalid || !this.entitlementValues?.valid) {
       this.form.markAllAsTouched();
+      this.entitlementValues?.markAllAsTouched();
       return;
     }
     const value = this.form.getRawValue();
     const priceMinor = parseMinorUnits(value.price);
-    let entitlements: Readonly<Record<string, unknown>>;
-    try {
-      const parsed: unknown = JSON.parse(value.entitlements);
-      if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object')
-        throw new Error();
-      entitlements = parsed as Readonly<Record<string, unknown>>;
-    } catch {
-      this.error.set('Entitlements must be a valid JSON object.');
-      return;
-    }
+    const entitlements = this.entitlementValues.value();
     if (priceMinor === null) {
       this.error.set('Price must use no more than two decimal places.');
       return;
     }
     this.saving.set(true);
     this.error.set('');
-    const payload = {
+    const commercialPayload = {
       name: value.name.trim(),
       price_minor: priceMinor,
       currency: value.currency.trim().toUpperCase(),
       included_credits: Number(value.includedCredits),
-      entitlements,
       billing_interval: value.billingInterval,
     } as const;
+    const legacyEntitlements =
+      this.editMode &&
+      this.product()!.entitlement_schema.fields.length === 0 &&
+      Object.keys(this.plan()!.entitlements).length > 0;
     const request = this.planId
-      ? this.catalogue.updatePlan(this.planId, {
-          ...payload,
-          version: this.plan()!.version,
-        })
+      ? this.catalogue.updatePlan(
+          this.planId,
+          legacyEntitlements
+            ? { ...commercialPayload, version: this.plan()!.version }
+            : {
+                ...commercialPayload,
+                entitlements,
+                entitlement_schema_version:
+                  this.product()!.entitlement_schema_version,
+                version: this.plan()!.version,
+              },
+        )
       : this.catalogue.createPlan(this.productId, {
-          ...payload,
+          ...commercialPayload,
+          entitlements,
+          entitlement_schema_version:
+            this.product()!.entitlement_schema_version,
           slug: value.slug.trim(),
           active: true,
         });
@@ -177,13 +189,35 @@ export class PlanFormComponent {
     });
   }
 
+  protected canSave(): boolean {
+    return (
+      !this.saving() &&
+      this.form.valid &&
+      Boolean(this.entitlementValues?.valid)
+    );
+  }
+
   protected back(): void {
     void this.router.navigateByUrl(this.returnUrl());
   }
 
-  private loadPlan(id: string): void {
-    this.catalogue.getPlan(id).subscribe({
-      next: (plan) => {
+  private load(): void {
+    if (!this.planId) {
+      this.catalogue.getProduct(this.productId).subscribe({
+        next: (product) => {
+          this.product.set(product);
+          this.loading.set(false);
+        },
+        error: (error: unknown) => this.loadFailed(error),
+      });
+      return;
+    }
+    forkJoin({
+      product: this.catalogue.getProduct(this.productId),
+      plan: this.catalogue.getPlan(this.planId),
+    }).subscribe({
+      next: ({ product, plan }) => {
+        this.product.set(product);
         this.plan.set(plan);
         this.form.reset({
           slug: plan.slug,
@@ -192,16 +226,17 @@ export class PlanFormComponent {
           currency: plan.currency,
           billingInterval: plan.billing_interval,
           includedCredits: plan.included_credits,
-          entitlements: JSON.stringify(plan.entitlements, null, 2),
         });
         this.form.controls.slug.disable();
         this.loading.set(false);
       },
-      error: (error: unknown) => {
-        this.error.set(catalogueMessage(error));
-        this.loading.set(false);
-      },
+      error: (error: unknown) => this.loadFailed(error),
     });
+  }
+
+  private loadFailed(error: unknown): void {
+    this.error.set(catalogueMessage(error));
+    this.loading.set(false);
   }
 
   private returnUrl(): string {

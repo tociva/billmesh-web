@@ -50,6 +50,9 @@
           <span>Description</span>
           <textarea formControlName="description" rows="5"></textarea>
         </label>
+        <billmesh-entitlement-schema-editor
+          [schema]="product()?.entitlement_schema || emptySchema"
+        />
         @if (error()) {
           <p class="notice notice--error" role="alert">{{ error() }}</p>
         }
@@ -61,7 +64,7 @@
             type="submit"
             appearance="solid"
             tone="primary"
-            [disabled]="saving() || form.invalid"
+            [disabled]="!canSave()"
           >
             {{ saving() ? 'Saving…' : 'Save product' }}
           </tng-button>

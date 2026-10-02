@@ -1,0 +1,187 @@
+<section class="entitlement-panel" aria-labelledby="entitlements-heading">
+  <div class="section-heading">
+    <div>
+      <h3 id="entitlements-heading">Entitlements</h3>
+      <p>Configure the capabilities and limits included with this plan.</p>
+    </div>
+  </div>
+
+  @if (!schema.fields.length) {
+    @if (legacyEntries().length) {
+      <p class="notice">
+        These legacy values are preserved but cannot be edited until the product
+        defines an entitlement schema.
+      </p>
+      <div class="entitlement-summary">
+        @for (entry of legacyEntries(); track entry[0]) {
+          <div>
+            <strong>{{ entry[0] }}</strong
+            ><span>{{ displayValue(entry[1]) }}</span>
+          </div>
+        }
+      </div>
+    } @else {
+      <p class="state">This product does not define any entitlements.</p>
+    }
+  } @else {
+    <div class="entitlement-fields">
+      @for (field of schema.fields; track field.key) {
+        <ng-container
+          *ngTemplateOutlet="
+            fieldControl;
+            context: {
+              $implicit: field,
+              control: child(form, field.key),
+              path: field.key || 'field',
+              showLabel: true,
+            }
+          "
+        />
+      }
+    </div>
+  }
+</section>
+
+<ng-template
+  #fieldControl
+  let-field
+  let-control="control"
+  let-path="path"
+  let-showLabel="showLabel"
+>
+  <div class="entitlement-field">
+    @if (field.type === 'object') {
+      <fieldset class="entitlement-group">
+        @if (showLabel) {
+          <legend>{{ field.label }}</legend>
+          @if (field.description) {
+            <p class="field-help">{{ field.description }}</p>
+          }
+        }
+        <div class="entitlement-fields">
+          @for (nested of field.fields || []; track nested.key) {
+            <ng-container
+              *ngTemplateOutlet="
+                fieldControl;
+                context: {
+                  $implicit: nested,
+                  control: child(asGroup(control), nested.key),
+                  path: path + '-' + nested.key,
+                  showLabel: true,
+                }
+              "
+            />
+          }
+        </div>
+      </fieldset>
+    } @else if (field.type === 'array') {
+      <fieldset class="entitlement-group">
+        @if (showLabel) {
+          <legend>{{ field.label }}</legend>
+          @if (field.description) {
+            <p class="field-help">{{ field.description }}</p>
+          }
+        }
+        <div class="array-items">
+          @for (
+            item of asArray(control).controls;
+            track $index;
+            let index = $index
+          ) {
+            <div class="array-item">
+              <ng-container
+                *ngTemplateOutlet="
+                  fieldControl;
+                  context: {
+                    $implicit: field.items,
+                    control: item,
+                    path: path + '-' + index,
+                    showLabel: false,
+                  }
+                "
+              />
+              <tng-button
+                type="button"
+                appearance="outline"
+                tone="danger"
+                (click)="removeArrayItem(control, index)"
+                >Remove</tng-button
+              >
+            </div>
+          }
+        </div>
+        <tng-button
+          type="button"
+          appearance="outline"
+          (click)="addArrayItem(field, control)"
+          >Add item</tng-button
+        >
+        @if (asArray(control).invalid && asArray(control).touched) {
+          <small class="field-error"
+            >The number of items is outside the allowed range.</small
+          >
+        }
+      </fieldset>
+    } @else if (field.type === 'boolean') {
+      <label class="boolean-field" [for]="inputId(path, field)">
+        <input
+          [id]="inputId(path, field)"
+          type="checkbox"
+          [formControl]="asControl(control)"
+        />
+        <span>
+          <strong>{{ field.label || 'Enabled' }}</strong>
+          @if (field.description) {
+            <small class="field-help">{{ field.description }}</small>
+          }
+        </span>
+      </label>
+    } @else {
+      <label [for]="inputId(path, field)">
+        @if (showLabel) {
+          <span>{{ field.label }}</span>
+        }
+        @if (field.type === 'select') {
+          <select
+            [id]="inputId(path, field)"
+            [formControl]="asControl(control)"
+          >
+            @if (!field.required) {
+              <option value="">Not set</option>
+            }
+            @for (option of field.options || []; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        } @else {
+          <input
+            [id]="inputId(path, field)"
+            [type]="
+              field.type === 'integer' || field.type === 'number'
+                ? 'number'
+                : 'text'
+            "
+            [step]="
+              field.type === 'integer'
+                ? '1'
+                : field.type === 'number'
+                  ? 'any'
+                  : null
+            "
+            [min]="field.minimum ?? null"
+            [max]="field.maximum ?? null"
+            [formControl]="asControl(control)"
+          />
+        }
+        @if (field.description) {
+          <small class="field-help">{{ field.description }}</small>
+        }
+        @if (asControl(control).invalid && asControl(control).touched) {
+          <small class="field-error"
+            >Enter a valid {{ field.label || 'value' }}.</small
+          >
+        }
+      </label>
+    }
+  </div>
+</ng-template>

@@ -1,9 +1,10 @@
-import { DatePipe, JsonPipe } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CatalogueAdminService } from '@billmesh/api-client';
-import type { Plan } from '@billmesh/domain';
+import type { Plan, Product } from '@billmesh/domain';
 import { TngButtonComponent, TngCardComponent } from '@tailng-ui/components';
+import { forkJoin } from 'rxjs';
 import {
   catalogueMessage,
   catalogueReturnUrl,
@@ -12,7 +13,7 @@ import {
 
 @Component({
   selector: 'billmesh-plan-view',
-  imports: [DatePipe, JsonPipe, TngButtonComponent, TngCardComponent],
+  imports: [DatePipe, TngButtonComponent, TngCardComponent],
   templateUrl: './plan-view.component.html',
   styleUrl: '../catalogue.shared.css',
 })
@@ -23,6 +24,30 @@ export class PlanViewComponent {
   protected readonly productId = this.route.snapshot.paramMap.get('productId')!;
   protected readonly planId = this.route.snapshot.paramMap.get('planId')!;
   protected readonly plan = signal<Plan | null>(null);
+  protected readonly product = signal<Product | null>(null);
+  protected readonly entitlementRows = computed(() => {
+    const plan = this.plan();
+    const product = this.product();
+    if (!plan || !product) return [];
+    const defined = product.entitlement_schema.fields
+      .filter((field) => field.key && field.key in plan.entitlements)
+      .map((field) => ({
+        key: field.key!,
+        label: field.label || field.key!,
+        value: this.formatEntitlement(plan.entitlements[field.key!]),
+      }));
+    const known = new Set(defined.map((row) => row.key));
+    return [
+      ...defined,
+      ...Object.entries(plan.entitlements)
+        .filter(([key]) => !known.has(key))
+        .map(([key, value]) => ({
+          key,
+          label: key,
+          value: this.formatEntitlement(value),
+        })),
+    ];
+  });
   protected readonly loading = signal(true);
   protected readonly error = signal('');
 
@@ -63,10 +88,29 @@ export class PlanViewComponent {
     return formatPlanPrice(plan);
   }
 
+  protected formatEntitlement(value: unknown): string {
+    if (value === null || value === undefined) return 'Not set';
+    if (typeof value === 'boolean') return value ? 'Enabled' : 'Disabled';
+    if (Array.isArray(value))
+      return (
+        value.map((item) => this.formatEntitlement(item)).join(', ') || 'None'
+      );
+    if (typeof value === 'object') {
+      return Object.entries(value as Record<string, unknown>)
+        .map(([key, item]) => `${key}: ${this.formatEntitlement(item)}`)
+        .join('; ');
+    }
+    return String(value);
+  }
+
   private load(): void {
-    this.catalogue.getPlan(this.planId).subscribe({
-      next: (plan) => {
+    forkJoin({
+      plan: this.catalogue.getPlan(this.planId),
+      product: this.catalogue.getProduct(this.productId),
+    }).subscribe({
+      next: ({ plan, product }) => {
         this.plan.set(plan);
+        this.product.set(product);
         this.loading.set(false);
       },
       error: (error: unknown) => {

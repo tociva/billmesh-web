@@ -72,7 +72,18 @@
         <dl style="grid-column: 1 / -1">
           <dt>Entitlements</dt>
           <dd>
-            <pre>{{ item.entitlements | json }}</pre>
+            @if (entitlementRows().length) {
+              <dl class="entitlement-summary">
+                @for (entitlement of entitlementRows(); track entitlement.key) {
+                  <div>
+                    <dt>{{ entitlement.label }}</dt>
+                    <dd>{{ entitlement.value }}</dd>
+                  </div>
+                }
+              </dl>
+            } @else {
+              <span>No entitlements</span>
+            }
           </dd>
         </dl>
       </div>

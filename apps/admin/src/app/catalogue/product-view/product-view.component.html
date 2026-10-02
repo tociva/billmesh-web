@@ -71,6 +71,36 @@
           </dl>
         </div>
 
+        <section
+          class="plans-section"
+          aria-labelledby="entitlement-schema-heading"
+        >
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Configuration</p>
+              <h3 id="entitlement-schema-heading">Entitlement schema</h3>
+            </div>
+          </div>
+          @if (item.entitlement_schema.fields.length) {
+            <div class="entitlement-summary">
+              @for (field of item.entitlement_schema.fields; track field.key) {
+                <div>
+                  <strong>{{ field.label }}</strong>
+                  <span
+                    >{{ field.key }} · {{ field.type
+                    }}{{ field.required ? ' · required' : '' }}</span
+                  >
+                  @if (field.description) {
+                    <small>{{ field.description }}</small>
+                  }
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="state">This product has no entitlements.</p>
+          }
+        </section>
+
         <section class="plans-section" aria-labelledby="plans-heading">
           <div class="section-heading">
             <div>

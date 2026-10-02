@@ -223,6 +223,89 @@ button:focus-visible {
   padding-top: 1rem;
   border-top: 1px solid var(--tng-semantic-border-subtle);
 }
+.entitlement-panel,
+.entitlement-fields,
+.schema-fields,
+.nested-editor,
+.array-items,
+.entitlement-summary {
+  display: grid;
+  gap: 1rem;
+}
+.entitlement-panel {
+  border-top: 1px solid var(--tng-semantic-border-subtle);
+  padding-top: 1rem;
+}
+.entitlement-field,
+.schema-field,
+.entitlement-group,
+.nested-editor {
+  min-width: 0;
+  border: 1px solid var(--tng-semantic-border-subtle);
+  border-radius: 0.7rem;
+  padding: 1rem;
+}
+.schema-field,
+.entitlement-group {
+  display: grid;
+  gap: 1rem;
+}
+.schema-field > legend,
+.entitlement-group > legend {
+  padding: 0 0.35rem;
+  font-weight: 750;
+}
+.schema-flags,
+.option-row,
+.array-item,
+.boolean-field {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.schema-flags {
+  flex-wrap: wrap;
+}
+.boolean-field {
+  grid-template-columns: auto 1fr;
+  font-weight: 500;
+}
+.boolean-field input {
+  width: auto;
+  flex: 0 0 auto;
+}
+.boolean-field span,
+.boolean-field strong,
+.boolean-field small {
+  display: block;
+}
+.field-help {
+  color: var(--tng-semantic-foreground-muted);
+  font-weight: 400;
+}
+.option-row > input {
+  flex: 1 1 12rem;
+}
+.array-item {
+  align-items: flex-end;
+}
+.array-item > :first-child {
+  flex: 1 1 auto;
+}
+.entitlement-summary > div {
+  display: grid;
+  gap: 0.25rem;
+  border: 1px solid var(--tng-semantic-border-subtle);
+  border-radius: 0.6rem;
+  padding: 0.8rem;
+}
+.entitlement-summary span,
+.entitlement-summary small {
+  color: var(--tng-semantic-foreground-muted);
+}
+.detail-grid .entitlement-summary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
 @media (max-width: 760px) {
   .page-heading,
   .section-heading {
@@ -233,7 +316,13 @@ button:focus-visible {
     flex-wrap: wrap;
   }
   .detail-grid,
-  .form-grid {
+  .form-grid,
+  .detail-grid .entitlement-summary {
     grid-template-columns: 1fr;
+  }
+  .option-row,
+  .array-item {
+    align-items: stretch;
+    flex-direction: column;
   }
 }

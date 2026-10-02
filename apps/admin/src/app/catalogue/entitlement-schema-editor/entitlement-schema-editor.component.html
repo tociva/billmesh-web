@@ -1,0 +1,330 @@
+<section class="entitlement-panel" aria-labelledby="schema-heading">
+  <div class="section-heading">
+    <div>
+      <h3 id="schema-heading">Entitlement schema</h3>
+      <p>
+        Define the labeled fields that appear when administrators create plans.
+      </p>
+    </div>
+    <tng-button type="button" appearance="outline" (click)="addField()"
+      >Add entitlement</tng-button
+    >
+  </div>
+
+  @if (!fields.length) {
+    <p class="state">
+      No entitlements are defined. Plans for this product will store an empty
+      entitlement object.
+    </p>
+  }
+
+  <div class="schema-fields">
+    @for (field of fields.controls; track field; let index = $index) {
+      <ng-container
+        *ngTemplateOutlet="
+          fieldEditor;
+          context: {
+            $implicit: asGroup(field),
+            parent: fields,
+            index,
+            item: false,
+          }
+        "
+      />
+    }
+  </div>
+  @if (duplicateKeys(fields)) {
+    <p class="field-error" role="alert">Entitlement keys must be unique.</p>
+  }
+</section>
+
+<ng-template
+  #fieldEditor
+  let-group
+  let-parent="parent"
+  let-index="index"
+  let-item="item"
+>
+  <fieldset class="schema-field">
+    <legend>
+      {{
+        item ? 'List item' : control(group, 'label').value || 'New entitlement'
+      }}
+    </legend>
+    <div class="form-grid">
+      @if (!item) {
+        <label>
+          <span>Key</span>
+          <input
+            type="text"
+            autocomplete="off"
+            placeholder="workflow_execution"
+            [formControl]="control(group, 'key')"
+          />
+          @if (control(group, 'key').invalid && control(group, 'key').touched) {
+            <small class="field-error"
+              >Use lowercase letters, numbers, and underscores.</small
+            >
+          }
+        </label>
+        <label>
+          <span>Label</span>
+          <input
+            type="text"
+            autocomplete="off"
+            placeholder="Workflow execution"
+            [formControl]="control(group, 'label')"
+          />
+        </label>
+      }
+      <label>
+        <span>Type</span>
+        <select
+          [formControl]="control(group, 'type')"
+          (change)="onTypeChange(group)"
+        >
+          @for (type of types; track type.value) {
+            <option [value]="type.value">{{ type.label }}</option>
+          }
+        </select>
+      </label>
+      @if (!item) {
+        <label>
+          <span>Description</span>
+          <input
+            type="text"
+            autocomplete="off"
+            [formControl]="control(group, 'description')"
+          />
+        </label>
+      }
+    </div>
+
+    <div class="schema-flags">
+      @if (!item) {
+        <label class="boolean-field"
+          ><input
+            type="checkbox"
+            [formControl]="control(group, 'required')"
+          /><span>Required</span></label
+        >
+      }
+      <label class="boolean-field"
+        ><input
+          type="checkbox"
+          [formControl]="control(group, 'nullable')"
+        /><span>Allow null</span></label
+      >
+      <label class="boolean-field"
+        ><input
+          type="checkbox"
+          [formControl]="control(group, 'defaultEnabled')"
+        /><span>Set a default</span></label
+      >
+    </div>
+
+    @if (control(group, 'defaultEnabled').value) {
+      <label>
+        <span>Default value</span>
+        @if (fieldType(group) === 'boolean') {
+          <select [formControl]="control(group, 'defaultValue')">
+            <option [ngValue]="true">Enabled</option>
+            <option [ngValue]="false">Disabled</option>
+          </select>
+        } @else if (fieldType(group) === 'select') {
+          <select [formControl]="control(group, 'defaultValue')">
+            @for (option of options(group).controls; track option) {
+              <option [value]="control(asGroup(option), 'value').value">
+                {{
+                  control(asGroup(option), 'label').value ||
+                    control(asGroup(option), 'value').value
+                }}
+              </option>
+            }
+          </select>
+        } @else if (
+          fieldType(group) !== 'object' && fieldType(group) !== 'array'
+        ) {
+          <input
+            [type]="
+              fieldType(group) === 'integer' || fieldType(group) === 'number'
+                ? 'number'
+                : 'text'
+            "
+            [formControl]="control(group, 'defaultValue')"
+          />
+        } @else {
+          <small class="field-help"
+            >Structured defaults start empty and are populated by their child
+            fields.</small
+          >
+        }
+      </label>
+    }
+
+    @if (fieldType(group) === 'integer' || fieldType(group) === 'number') {
+      <div class="form-grid">
+        <label
+          ><span>Minimum</span
+          ><input type="number" [formControl]="control(group, 'minimum')"
+        /></label>
+        <label
+          ><span>Maximum</span
+          ><input type="number" [formControl]="control(group, 'maximum')"
+        /></label>
+      </div>
+    }
+    @if (fieldType(group) === 'string') {
+      <div class="form-grid">
+        <label
+          ><span>Minimum length</span
+          ><input
+            type="number"
+            min="0"
+            step="1"
+            [formControl]="control(group, 'minLength')"
+        /></label>
+        <label
+          ><span>Maximum length</span
+          ><input
+            type="number"
+            min="0"
+            step="1"
+            [formControl]="control(group, 'maxLength')"
+        /></label>
+      </div>
+    }
+    @if (fieldType(group) === 'select') {
+      <div class="nested-editor">
+        <div class="section-heading">
+          <strong>Options</strong
+          ><tng-button
+            type="button"
+            appearance="outline"
+            (click)="addOption(group)"
+            >Add option</tng-button
+          >
+        </div>
+        @for (
+          option of options(group).controls;
+          track option;
+          let optionIndex = $index
+        ) {
+          <div class="option-row">
+            <input
+              type="text"
+              placeholder="Label"
+              aria-label="Option label"
+              [formControl]="control(asGroup(option), 'label')"
+            />
+            <input
+              type="text"
+              placeholder="value"
+              aria-label="Option value"
+              [formControl]="control(asGroup(option), 'value')"
+            />
+            <tng-button
+              type="button"
+              appearance="outline"
+              tone="danger"
+              (click)="removeOption(group, optionIndex)"
+              >Remove</tng-button
+            >
+          </div>
+        }
+      </div>
+    }
+    @if (fieldType(group) === 'object') {
+      <div class="nested-editor">
+        <div class="section-heading">
+          <strong>Nested fields</strong
+          ><tng-button
+            type="button"
+            appearance="outline"
+            (click)="addField(nestedFields(group))"
+            >Add field</tng-button
+          >
+        </div>
+        @for (
+          nested of nestedFields(group).controls;
+          track nested;
+          let nestedIndex = $index
+        ) {
+          <ng-container
+            *ngTemplateOutlet="
+              fieldEditor;
+              context: {
+                $implicit: asGroup(nested),
+                parent: nestedFields(group),
+                index: nestedIndex,
+                item: false,
+              }
+            "
+          />
+        }
+        @if (duplicateKeys(nestedFields(group))) {
+          <small class="field-error">Nested keys must be unique.</small>
+        }
+      </div>
+    }
+    @if (fieldType(group) === 'array') {
+      <div class="form-grid">
+        <label
+          ><span>Minimum items</span
+          ><input
+            type="number"
+            min="0"
+            step="1"
+            [formControl]="control(group, 'minItems')"
+        /></label>
+        <label
+          ><span>Maximum items</span
+          ><input
+            type="number"
+            min="0"
+            step="1"
+            [formControl]="control(group, 'maxItems')"
+        /></label>
+      </div>
+      <div class="nested-editor">
+        <ng-container
+          *ngTemplateOutlet="
+            fieldEditor;
+            context: {
+              $implicit: item(group),
+              parent: null,
+              index: 0,
+              item: true,
+            }
+          "
+        />
+      </div>
+    }
+
+    @if (!item) {
+      <div class="row-actions">
+        <tng-button
+          type="button"
+          appearance="outline"
+          [disabled]="index === 0"
+          (click)="moveField(parent, index, -1)"
+          >Move up</tng-button
+        >
+        <tng-button
+          type="button"
+          appearance="outline"
+          [disabled]="index === fieldCount(parent) - 1"
+          (click)="moveField(parent, index, 1)"
+          >Move down</tng-button
+        >
+        <tng-button
+          type="button"
+          appearance="outline"
+          tone="danger"
+          (click)="removeField(parent, index)"
+          >Remove entitlement</tng-button
+        >
+      </div>
+    }
+  </fieldset>
+</ng-template>

@@ -118,6 +118,7 @@ describe('CatalogueAdminService', () => {
         currency: 'INR',
         included_credits: 100,
         entitlements: { reports: true },
+        entitlement_schema_version: 2,
         billing_interval: 'monthly',
       })
       .subscribe();
@@ -125,6 +126,7 @@ describe('CatalogueAdminService', () => {
       'https://api-local.billme.sh/api/v1/admin/products/product-1/plans',
     );
     expect(create.request.method).toBe('POST');
+    expect(create.request.body.entitlement_schema_version).toBe(2);
     expect(create.request.headers.get('X-CSRF-Token')).toBe('admin-csrf');
     create.flush({});
 

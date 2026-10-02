@@ -88,14 +88,12 @@
             />
           </label>
         </div>
-        <label>
-          <span>Entitlements JSON</span>
-          <textarea
-            formControlName="entitlements"
-            rows="9"
-            spellcheck="false"
-          ></textarea>
-        </label>
+        @if (product(); as selectedProduct) {
+          <billmesh-entitlement-values
+            [schema]="selectedProduct.entitlement_schema"
+            [entitlements]="plan()?.entitlements || emptyEntitlements"
+          />
+        }
         @if (error()) {
           <p class="notice notice--error" role="alert">{{ error() }}</p>
         }
@@ -107,7 +105,7 @@
             type="submit"
             appearance="solid"
             tone="primary"
-            [disabled]="saving() || form.invalid"
+            [disabled]="!canSave()"
           >
             {{ saving() ? 'Saving…' : 'Save plan' }}
           </tng-button>

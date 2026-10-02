@@ -10,6 +10,8 @@ const product: Product = {
   slug: 'invoice-api',
   name: '<script>Invoice API</script>',
   description: '<img src=x onerror=alert(1)>',
+  entitlement_schema: { fields: [] },
+  entitlement_schema_version: 1,
   active: true,
   version: 1,
   created_at: '2026-01-01T00:00:00Z',
