@@ -56,6 +56,13 @@ describe('CatalogueAdminService', () => {
   afterEach(() => requests.verify());
 
   it('ADMUI-001 sends Product filters and detail calls', () => {
+    catalogue.getProductPolicyMetadata().subscribe();
+    requests
+      .expectOne(
+        'https://api-local.billme.sh/api/v1/admin/product-policy-metadata',
+      )
+      .flush({ schema_version: 1, defaults: {}, options: {}, constraints: {} });
+
     catalogue
       .listProducts({
         status: 'archived',

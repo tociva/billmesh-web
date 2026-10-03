@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import type {
+  BillingPolicyMetadata,
   Plan,
   PlanCreate,
   PlanUpdate,
@@ -42,6 +43,12 @@ export class CatalogueAdminService {
 
   getProduct(id: string): Observable<Product> {
     return this.api.get<Product>(`/admin/products/${encodeURIComponent(id)}`);
+  }
+
+  getProductPolicyMetadata(): Observable<BillingPolicyMetadata> {
+    return this.api.get<BillingPolicyMetadata>(
+      '/admin/product-policy-metadata',
+    );
   }
 
   createProduct(input: ProductCreate): Observable<Product> {

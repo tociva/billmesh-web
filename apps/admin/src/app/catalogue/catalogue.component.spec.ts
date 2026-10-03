@@ -1,7 +1,7 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { CatalogueAdminService } from '@billmesh/api-client';
-import type { Product } from '@billmesh/domain';
+import { DEFAULT_BILLING_POLICY, type Product } from '@billmesh/domain';
 import { of } from 'rxjs';
 import { CatalogueComponent } from './catalogue.component';
 
@@ -12,6 +12,8 @@ const product: Product = {
   description: '<img src=x onerror=alert(1)>',
   entitlement_schema: { fields: [] },
   entitlement_schema_version: 1,
+  billing_policy: DEFAULT_BILLING_POLICY,
+  billing_policy_version: 1,
   active: true,
   version: 1,
   created_at: '2026-01-01T00:00:00Z',

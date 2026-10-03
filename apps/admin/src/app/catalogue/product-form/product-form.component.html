@@ -50,6 +50,443 @@
           <span>Description</span>
           <textarea formControlName="description" rows="5"></textarea>
         </label>
+        <section class="policy-panel" formGroupName="policy">
+          <header>
+            <div>
+              <p class="eyebrow">Billing behavior</p>
+              <h3>Product billing policy</h3>
+              <p class="field-help">
+                Billmesh evaluates this versioned policy for every new billing
+                command. Existing and pending operations retain their policy
+                snapshot.
+              </p>
+            </div>
+            @if (product(); as item) {
+              <span class="status active"
+                >Policy v{{ item.billing_policy_version }}</span
+              >
+            }
+          </header>
+
+          <fieldset class="policy-group">
+            <legend>Customer and Free eligibility</legend>
+            <div class="form-grid">
+              <label>
+                <span>Customer scope</span>
+                <select formControlName="customerScope">
+                  @for (option of options('customer.scope'); track option) {
+                    <option [value]="option">{{ option }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                <span>Free subscriptions per customer</span>
+                <input
+                  type="number"
+                  formControlName="freeAllowance"
+                  min="0"
+                  max="1000000"
+                />
+              </label>
+              <label>
+                <span>Ownership change</span>
+                <select formControlName="ownershipChange">
+                  @for (
+                    option of options('customer.ownership_change');
+                    track option
+                  ) {
+                    <option [value]="option">{{ option }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                <span>Ownership transfer</span>
+                <select formControlName="ownershipTransfer">
+                  @for (
+                    option of options('customer.ownership_transfer');
+                    track option
+                  ) {
+                    <option [value]="option">{{ option }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                <span>Ineligible new owner</span>
+                <select formControlName="ineligibleOwnerAction">
+                  @for (
+                    option of options('customer.ineligible_owner_action');
+                    track option
+                  ) {
+                    <option [value]="option">{{ option }}</option>
+                  }
+                </select>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="policy-group">
+            <legend>Account onboarding</legend>
+            <div class="form-grid">
+              <label>
+                <span>Initial plan</span>
+                <select formControlName="initialPlan">
+                  @for (
+                    option of options('onboarding.initial_plan');
+                    track option
+                  ) {
+                    <option [value]="option">{{ option }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                <span>Ineligible onboarding</span>
+                <select formControlName="onboardingIneligibleAction">
+                  @for (
+                    option of options('onboarding.ineligible_action');
+                    track option
+                  ) {
+                    <option [value]="option">{{ option }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                <span>Deletion retention</span>
+                <select formControlName="deletionRetention">
+                  @for (
+                    option of options('onboarding.deletion_retention');
+                    track option
+                  ) {
+                    <option [value]="option">{{ option }}</option>
+                  }
+                </select>
+              </label>
+              <label class="boolean-field">
+                <input
+                  type="checkbox"
+                  formControlName="allowWithoutSubscription"
+                />
+                <span>Allow accounts without an active subscription</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="policy-group">
+            <legend>Catalogue and trials</legend>
+            <div class="form-grid">
+              <label>
+                <span>Catalogue access</span>
+                <select formControlName="catalogueAccess">
+                  @for (option of options('catalogue.access'); track option) {
+                    <option [value]="option">{{ option }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                <span>Presentation fields</span>
+                <input formControlName="presentationFields" />
+                <small class="field-help">Comma-separated safe fields.</small>
+              </label>
+              <label class="boolean-field">
+                <input type="checkbox" formControlName="catalogueRequired" />
+                <span>Require catalogue access before account creation</span>
+              </label>
+              <label class="boolean-field">
+                <input type="checkbox" formControlName="trialEnabled" />
+                <span>Enable trials</span>
+              </label>
+              @if (form.controls.policy.controls.trialEnabled.value) {
+                <label>
+                  <span>Trial days</span>
+                  <input
+                    type="number"
+                    formControlName="trialDays"
+                    min="1"
+                    max="3650"
+                  />
+                </label>
+                <label>
+                  <span>Trial conversion</span>
+                  <select formControlName="trialConversion">
+                    @for (
+                      option of options('catalogue.trial_conversion');
+                      track option
+                    ) {
+                      <option [value]="option">{{ option }}</option>
+                    }
+                  </select>
+                </label>
+              }
+            </div>
+          </fieldset>
+
+          <fieldset class="policy-group">
+            <legend>Subscription lifecycle</legend>
+            <div class="form-grid">
+              <label>
+                <span>Paid-to-Paid changes</span>
+                <select formControlName="paidToPaid">
+                  @for (
+                    option of options('lifecycle.paid_to_paid');
+                    track option
+                  ) {
+                    <option [value]="option">{{ option }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                <span>Cancellation default</span>
+                <select formControlName="cancellationDefault">
+                  @for (
+                    option of options('lifecycle.cancellation_default');
+                    track option
+                  ) {
+                    <option [value]="option">{{ option }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                <span>Immediate-cancellation refund</span>
+                <select formControlName="immediateCancelRefund">
+                  @for (
+                    option of options('lifecycle.immediate_cancel_refund');
+                    track option
+                  ) {
+                    <option [value]="option">{{ option }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                <span>Reactivation</span>
+                <select formControlName="reactivation">
+                  @for (
+                    option of options('lifecycle.reactivation');
+                    track option
+                  ) {
+                    <option [value]="option">{{ option }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                <span>Over-limit downgrade</span>
+                <select formControlName="overLimit">
+                  @for (
+                    option of options('lifecycle.over_limit');
+                    track option
+                  ) {
+                    <option [value]="option">{{ option }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                <span>Renewal</span>
+                <select formControlName="renewal">
+                  @for (option of options('lifecycle.renewal'); track option) {
+                    <option [value]="option">{{ option }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                <span>Dunning</span>
+                <select formControlName="dunning">
+                  @for (option of options('lifecycle.dunning'); track option) {
+                    <option [value]="option">{{ option }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                <span>Grace period days</span>
+                <input
+                  type="number"
+                  formControlName="gracePeriodDays"
+                  min="0"
+                  max="365"
+                />
+              </label>
+              <label>
+                <span>Expiration</span>
+                <select formControlName="expiration">
+                  @for (
+                    option of options('lifecycle.expiration');
+                    track option
+                  ) {
+                    <option [value]="option">{{ option }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                <span>Refund entitlements</span>
+                <select formControlName="refundEntitlements">
+                  @for (
+                    option of options('lifecycle.refund_entitlements');
+                    track option
+                  ) {
+                    <option [value]="option">{{ option }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                <span>Chargeback entitlements</span>
+                <select formControlName="chargebackEntitlements">
+                  @for (
+                    option of options('lifecycle.chargeback_entitlements');
+                    track option
+                  ) {
+                    <option [value]="option">{{ option }}</option>
+                  }
+                </select>
+              </label>
+              <label class="boolean-field">
+                <input type="checkbox" formControlName="allowImmediateCancel" />
+                <span>Allow immediate cancellation</span>
+              </label>
+              <label class="boolean-field">
+                <input
+                  type="checkbox"
+                  formControlName="allowCancellationWithdraw"
+                />
+                <span>Allow withdrawal of scheduled cancellation</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="policy-group">
+            <legend>Projection and outage behavior</legend>
+            <div class="form-grid">
+              <label>
+                <span>Fresh snapshot seconds</span>
+                <input
+                  type="number"
+                  formControlName="freshSeconds"
+                  min="0"
+                  max="2592000"
+                />
+              </label>
+              <label>
+                <span>Degraded-mode seconds</span>
+                <input
+                  type="number"
+                  formControlName="degradedSeconds"
+                  min="0"
+                  max="2592000"
+                />
+              </label>
+              <label>
+                <span>Refresh interval seconds</span>
+                <input
+                  type="number"
+                  formControlName="refreshSeconds"
+                  min="1"
+                  max="2592000"
+                />
+              </label>
+              <label>
+                <span>Reconciliation interval seconds</span>
+                <input
+                  type="number"
+                  formControlName="reconciliationSeconds"
+                  min="1"
+                  max="2592000"
+                />
+              </label>
+              <label class="policy-wide">
+                <span>Fail-closed operations</span>
+                <input formControlName="failClosedOperations" />
+                <small class="field-help"
+                  >Comma-separated operation classes.</small
+                >
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="policy-group">
+            <legend>Checkout</legend>
+            <div class="form-grid">
+              <label>
+                <span>Presentation</span>
+                <select formControlName="checkoutPresentation">
+                  @for (
+                    option of options('checkout.presentation');
+                    track option
+                  ) {
+                    <option [value]="option">{{ option }}</option>
+                  }
+                </select>
+              </label>
+              <label>
+                <span>Confirmation</span>
+                <select formControlName="confirmation">
+                  @for (
+                    option of options('checkout.confirmation');
+                    track option
+                  ) {
+                    <option [value]="option">{{ option }}</option>
+                  }
+                </select>
+              </label>
+              <label class="boolean-field">
+                <input type="checkbox" formControlName="recurringMandate" />
+                <span>Require recurring mandate</span>
+              </label>
+              <label class="policy-wide">
+                <span>Allowed redirect origins</span>
+                <textarea formControlName="redirectOrigins" rows="4"></textarea>
+                <small class="field-help"
+                  >One HTTPS origin per line. HTTP is allowed only for
+                  localhost.</small
+                >
+              </label>
+            </div>
+          </fieldset>
+
+          <section
+            class="policy-review"
+            aria-labelledby="policy-review-heading"
+          >
+            <div>
+              <p class="eyebrow">Review</p>
+              <h4 id="policy-review-heading">Effective configuration</h4>
+            </div>
+            <dl>
+              <div>
+                <dt>Customer</dt>
+                <dd>
+                  {{ form.controls.policy.controls.customerScope.value }} ·
+                  {{ form.controls.policy.controls.freeAllowance.value }} Free
+                </dd>
+              </div>
+              <div>
+                <dt>Onboarding</dt>
+                <dd>{{ form.controls.policy.controls.initialPlan.value }}</dd>
+              </div>
+              <div>
+                <dt>Catalogue</dt>
+                <dd>
+                  {{ form.controls.policy.controls.catalogueAccess.value }}
+                </dd>
+              </div>
+              <div>
+                <dt>Paid changes</dt>
+                <dd>{{ form.controls.policy.controls.paidToPaid.value }}</dd>
+              </div>
+              <div>
+                <dt>Cancellation</dt>
+                <dd>
+                  {{ form.controls.policy.controls.cancellationDefault.value }}
+                </dd>
+              </div>
+              <div>
+                <dt>Snapshot freshness</dt>
+                <dd>
+                  {{ form.controls.policy.controls.freshSeconds.value }} seconds
+                </dd>
+              </div>
+            </dl>
+          </section>
+
+          @if (policyValidationError(); as policyError) {
+            <p class="notice notice--error" role="alert">{{ policyError }}</p>
+          }
+        </section>
         <billmesh-entitlement-schema-editor
           [schema]="product()?.entitlement_schema || emptySchema"
         />

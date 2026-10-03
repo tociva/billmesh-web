@@ -71,6 +71,61 @@
           </dl>
         </div>
 
+        <section class="plans-section" aria-labelledby="billing-policy-heading">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Billing behavior</p>
+              <h3 id="billing-policy-heading">
+                Product policy v{{ item.billing_policy_version }}
+              </h3>
+            </div>
+          </div>
+          <div class="detail-grid">
+            <dl>
+              <dt>Customer scope</dt>
+              <dd>{{ item.billing_policy.customer.scope }}</dd>
+            </dl>
+            <dl>
+              <dt>Free allowance</dt>
+              <dd>{{ item.billing_policy.customer.free_allowance }}</dd>
+            </dl>
+            <dl>
+              <dt>Initial plan</dt>
+              <dd>{{ item.billing_policy.onboarding.initial_plan }}</dd>
+            </dl>
+            <dl>
+              <dt>Catalogue access</dt>
+              <dd>{{ item.billing_policy.catalogue.access }}</dd>
+            </dl>
+            <dl>
+              <dt>Paid plan changes</dt>
+              <dd>{{ item.billing_policy.lifecycle.paid_to_paid }}</dd>
+            </dl>
+            <dl>
+              <dt>Cancellation</dt>
+              <dd>
+                {{ item.billing_policy.lifecycle.cancellation_default }} ·
+                immediate
+                {{
+                  item.billing_policy.lifecycle.allow_immediate_cancel
+                    ? 'allowed'
+                    : 'disabled'
+                }}
+              </dd>
+            </dl>
+            <dl>
+              <dt>Snapshot freshness</dt>
+              <dd>
+                {{ item.billing_policy.projection.fresh_seconds }} seconds
+              </dd>
+            </dl>
+            <dl>
+              <dt>Checkout</dt>
+              <dd>{{ item.billing_policy.checkout.presentation }}</dd>
+            </dl>
+          </div>
+        </section>
+
         <section
           class="plans-section"
           aria-labelledby="entitlement-schema-heading"
