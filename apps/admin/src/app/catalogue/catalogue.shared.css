@@ -122,6 +122,30 @@ textarea {
   color: var(--tng-semantic-foreground-muted);
   text-align: center;
 }
+.empty-state {
+  display: grid;
+  min-height: 18rem;
+  place-items: center;
+  padding: clamp(2.5rem, 8vw, 5rem) 1rem;
+  text-align: center;
+}
+.empty-state__content {
+  display: grid;
+  max-width: 32rem;
+  justify-items: center;
+  gap: 0.75rem;
+}
+.empty-state h3,
+.empty-state p {
+  margin: 0;
+}
+.empty-state h3 {
+  font-size: clamp(1.35rem, 2vw, 1.75rem);
+}
+.empty-state__content > p:not(.eyebrow) {
+  color: var(--tng-semantic-foreground-muted);
+  line-height: 1.6;
+}
 .row-actions {
   justify-content: flex-end;
 }
@@ -305,6 +329,16 @@ button:focus-visible {
 .policy-group > legend {
   padding: 0 0.35rem;
   font-weight: 750;
+}
+.policy-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.policy-label tng-tooltip {
+  flex: 0 0 auto;
+  --tng-tooltip-trigger-height: 1.5rem;
 }
 .policy-wide {
   grid-column: 1 / -1;

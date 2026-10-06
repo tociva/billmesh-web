@@ -46,6 +46,10 @@
           <dd>{{ item.slug }}</dd>
         </dl>
         <dl>
+          <dt>Plan family</dt>
+          <dd>{{ item.plan_family_id }}</dd>
+        </dl>
+        <dl>
           <dt>Status</dt>
           <dd>
             <span [class]="item.active ? 'status active' : 'status archived'">{{

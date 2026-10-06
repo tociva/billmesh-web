@@ -76,6 +76,8 @@ export class PlanListComponent {
   protected readonly columns: readonly TngTableColumn<Plan>[] = [
     { id: 'name', label: 'Name', sortable: true, width: '15rem' },
     { id: 'slug', label: 'Slug', sortable: true, width: '13rem' },
+    { id: 'plan_family_id', label: 'Family', width: '10rem' },
+    { id: 'billing_interval', label: 'Interval', width: '8rem' },
     { id: 'price', label: 'Price', sortable: true, width: '10rem' },
     { id: 'included_credits', label: 'Credits', width: '8rem', align: 'end' },
     { id: 'status', label: 'Status', sortable: true, width: '8rem' },

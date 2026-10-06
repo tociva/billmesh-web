@@ -111,4 +111,23 @@ describe('ProductConfigurationComponent billing policy', () => {
       }),
     );
   });
+
+  it('shows human-readable policy choices with contextual help', () => {
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Require an explicit plan selection');
+    expect(text).toContain('Payment-provider page');
+    expect(text).not.toContain('explicit_transition');
+    expect(text).not.toContain('provider_hosted');
+
+    const helpTrigger = fixture.nativeElement.querySelector(
+      'button[aria-label="Help for initial plan"]',
+    ) as HTMLButtonElement | null;
+    expect(helpTrigger).not.toBeNull();
+    expect(helpTrigger?.parentElement?.textContent).toContain(
+      'Controls how a new customer receives their first plan.',
+    );
+    expect(helpTrigger?.parentElement?.textContent).toContain(
+      'Wait for the application to request a specific plan transition.',
+    );
+  });
 });

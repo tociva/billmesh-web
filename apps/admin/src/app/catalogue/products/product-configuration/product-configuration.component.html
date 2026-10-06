@@ -62,7 +62,19 @@
                 <legend>Customer and Free eligibility</legend>
                 <div class="form-grid">
                   <label>
-                    <span>Customer scope</span>
+                    <span class="policy-label">
+                      Customer scope
+                      <tng-tooltip
+                        ariaLabel="Help for customer scope"
+                        [text]="
+                          policyHelp(
+                            'customer.scope',
+                            form.controls.policy.controls.customerScope.value
+                          )
+                        "
+                        triggerLabel="?"
+                      />
+                    </span>
                     <tng-select
                       aria-label="Customer scope"
                       [options]="options('customer.scope')"
@@ -99,7 +111,19 @@
                     />
                   </label>
                   <label>
-                    <span>Ownership change</span>
+                    <span class="policy-label">
+                      Ownership change
+                      <tng-tooltip
+                        ariaLabel="Help for ownership change"
+                        [text]="
+                          policyHelp(
+                            'customer.ownership_change',
+                            form.controls.policy.controls.ownershipChange.value
+                          )
+                        "
+                        triggerLabel="?"
+                      />
+                    </span>
                     <tng-select
                       aria-label="Ownership change"
                       [options]="options('customer.ownership_change')"
@@ -115,7 +139,20 @@
                     />
                   </label>
                   <label>
-                    <span>Ownership transfer</span>
+                    <span class="policy-label">
+                      Ownership transfer
+                      <tng-tooltip
+                        ariaLabel="Help for ownership transfer"
+                        [text]="
+                          policyHelp(
+                            'customer.ownership_transfer',
+                            form.controls.policy.controls.ownershipTransfer
+                              .value
+                          )
+                        "
+                        triggerLabel="?"
+                      />
+                    </span>
                     <tng-select
                       aria-label="Ownership transfer"
                       [options]="options('customer.ownership_transfer')"
@@ -131,7 +168,20 @@
                     />
                   </label>
                   <label>
-                    <span>Ineligible new owner</span>
+                    <span class="policy-label">
+                      Ineligible new owner
+                      <tng-tooltip
+                        ariaLabel="Help for ineligible new owner"
+                        [text]="
+                          policyHelp(
+                            'customer.ineligible_owner_action',
+                            form.controls.policy.controls.ineligibleOwnerAction
+                              .value
+                          )
+                        "
+                        triggerLabel="?"
+                      />
+                    </span>
                     <tng-select
                       aria-label="Ineligible new owner"
                       [options]="options('customer.ineligible_owner_action')"
@@ -154,7 +204,19 @@
                 <legend>Account onboarding</legend>
                 <div class="form-grid">
                   <label>
-                    <span>Initial plan</span>
+                    <span class="policy-label">
+                      Initial plan
+                      <tng-tooltip
+                        ariaLabel="Help for initial plan"
+                        [text]="
+                          policyHelp(
+                            'onboarding.initial_plan',
+                            form.controls.policy.controls.initialPlan.value
+                          )
+                        "
+                        triggerLabel="?"
+                      />
+                    </span>
                     <tng-select
                       aria-label="Initial plan"
                       [options]="options('onboarding.initial_plan')"
@@ -168,7 +230,20 @@
                     />
                   </label>
                   <label>
-                    <span>Ineligible onboarding</span>
+                    <span class="policy-label">
+                      Ineligible onboarding
+                      <tng-tooltip
+                        ariaLabel="Help for ineligible onboarding"
+                        [text]="
+                          policyHelp(
+                            'onboarding.ineligible_action',
+                            form.controls.policy.controls
+                              .onboardingIneligibleAction.value
+                          )
+                        "
+                        triggerLabel="?"
+                      />
+                    </span>
                     <tng-select
                       aria-label="Ineligible onboarding"
                       [options]="options('onboarding.ineligible_action')"
@@ -186,7 +261,20 @@
                     />
                   </label>
                   <label>
-                    <span>Deletion retention</span>
+                    <span class="policy-label">
+                      Data after account deletion
+                      <tng-tooltip
+                        ariaLabel="Help for data after account deletion"
+                        [text]="
+                          policyHelp(
+                            'onboarding.deletion_retention',
+                            form.controls.policy.controls.deletionRetention
+                              .value
+                          )
+                        "
+                        triggerLabel="?"
+                      />
+                    </span>
                     <tng-select
                       aria-label="Deletion retention"
                       [options]="options('onboarding.deletion_retention')"
@@ -215,7 +303,19 @@
                 <legend>Catalogue and trials</legend>
                 <div class="form-grid">
                   <label>
-                    <span>Catalogue access</span>
+                    <span class="policy-label">
+                      Catalogue access
+                      <tng-tooltip
+                        ariaLabel="Help for catalogue access"
+                        [text]="
+                          policyHelp(
+                            'catalogue.access',
+                            form.controls.policy.controls.catalogueAccess.value
+                          )
+                        "
+                        triggerLabel="?"
+                      />
+                    </span>
                     <tng-select
                       aria-label="Catalogue access"
                       [options]="options('catalogue.access')"
@@ -281,7 +381,20 @@
                       />
                     </label>
                     <label>
-                      <span>Trial conversion</span>
+                      <span class="policy-label">
+                        After the trial ends
+                        <tng-tooltip
+                          ariaLabel="Help for trial conversion"
+                          [text]="
+                            policyHelp(
+                              'catalogue.trial_conversion',
+                              form.controls.policy.controls.trialConversion
+                                .value
+                            )
+                          "
+                          triggerLabel="?"
+                        />
+                      </span>
                       <tng-select
                         aria-label="Trial conversion"
                         [options]="options('catalogue.trial_conversion')"
@@ -304,7 +417,19 @@
                 <legend>Subscription lifecycle</legend>
                 <div class="form-grid">
                   <label>
-                    <span>Paid-to-Paid changes</span>
+                    <span class="policy-label">
+                      Changes between paid plans
+                      <tng-tooltip
+                        ariaLabel="Help for changes between paid plans"
+                        [text]="
+                          policyHelp(
+                            'lifecycle.paid_to_paid',
+                            form.controls.policy.controls.paidToPaid.value
+                          )
+                        "
+                        triggerLabel="?"
+                      />
+                    </span>
                     <tng-select
                       aria-label="Paid-to-Paid changes"
                       [options]="options('lifecycle.paid_to_paid')"
@@ -318,7 +443,20 @@
                     />
                   </label>
                   <label>
-                    <span>Cancellation default</span>
+                    <span class="policy-label">
+                      Default cancellation timing
+                      <tng-tooltip
+                        ariaLabel="Help for default cancellation timing"
+                        [text]="
+                          policyHelp(
+                            'lifecycle.cancellation_default',
+                            form.controls.policy.controls.cancellationDefault
+                              .value
+                          )
+                        "
+                        triggerLabel="?"
+                      />
+                    </span>
                     <tng-select
                       aria-label="Cancellation default"
                       [options]="options('lifecycle.cancellation_default')"
@@ -334,7 +472,20 @@
                     />
                   </label>
                   <label>
-                    <span>Immediate-cancellation refund</span>
+                    <span class="policy-label">
+                      Refund for immediate cancellation
+                      <tng-tooltip
+                        ariaLabel="Help for immediate cancellation refunds"
+                        [text]="
+                          policyHelp(
+                            'lifecycle.immediate_cancel_refund',
+                            form.controls.policy.controls.immediateCancelRefund
+                              .value
+                          )
+                        "
+                        triggerLabel="?"
+                      />
+                    </span>
                     <tng-select
                       aria-label="Immediate-cancellation refund"
                       [options]="options('lifecycle.immediate_cancel_refund')"
@@ -351,7 +502,19 @@
                     />
                   </label>
                   <label>
-                    <span>Reactivation</span>
+                    <span class="policy-label">
+                      Reactivating a subscription
+                      <tng-tooltip
+                        ariaLabel="Help for subscription reactivation"
+                        [text]="
+                          policyHelp(
+                            'lifecycle.reactivation',
+                            form.controls.policy.controls.reactivation.value
+                          )
+                        "
+                        triggerLabel="?"
+                      />
+                    </span>
                     <tng-select
                       aria-label="Reactivation"
                       [options]="options('lifecycle.reactivation')"
@@ -365,7 +528,19 @@
                     />
                   </label>
                   <label>
-                    <span>Over-limit downgrade</span>
+                    <span class="policy-label">
+                      Downgrade while over the new limit
+                      <tng-tooltip
+                        ariaLabel="Help for over-limit downgrades"
+                        [text]="
+                          policyHelp(
+                            'lifecycle.over_limit',
+                            form.controls.policy.controls.overLimit.value
+                          )
+                        "
+                        triggerLabel="?"
+                      />
+                    </span>
                     <tng-select
                       aria-label="Over-limit downgrade"
                       [options]="options('lifecycle.over_limit')"
@@ -379,7 +554,19 @@
                     />
                   </label>
                   <label>
-                    <span>Renewal</span>
+                    <span class="policy-label">
+                      Renewal authority
+                      <tng-tooltip
+                        ariaLabel="Help for renewal authority"
+                        [text]="
+                          policyHelp(
+                            'lifecycle.renewal',
+                            form.controls.policy.controls.renewal.value
+                          )
+                        "
+                        triggerLabel="?"
+                      />
+                    </span>
                     <tng-select
                       aria-label="Renewal"
                       [options]="options('lifecycle.renewal')"
@@ -393,7 +580,19 @@
                     />
                   </label>
                   <label>
-                    <span>Dunning</span>
+                    <span class="policy-label">
+                      Failed-payment recovery
+                      <tng-tooltip
+                        ariaLabel="Help for failed-payment recovery"
+                        [text]="
+                          policyHelp(
+                            'lifecycle.dunning',
+                            form.controls.policy.controls.dunning.value
+                          )
+                        "
+                        triggerLabel="?"
+                      />
+                    </span>
                     <tng-select
                       aria-label="Dunning"
                       [options]="options('lifecycle.dunning')"
@@ -428,7 +627,19 @@
                     />
                   </label>
                   <label>
-                    <span>Expiration</span>
+                    <span class="policy-label">
+                      When a subscription expires
+                      <tng-tooltip
+                        ariaLabel="Help for subscription expiration"
+                        [text]="
+                          policyHelp(
+                            'lifecycle.expiration',
+                            form.controls.policy.controls.expiration.value
+                          )
+                        "
+                        triggerLabel="?"
+                      />
+                    </span>
                     <tng-select
                       aria-label="Expiration"
                       [options]="options('lifecycle.expiration')"
@@ -442,7 +653,20 @@
                     />
                   </label>
                   <label>
-                    <span>Refund entitlements</span>
+                    <span class="policy-label">
+                      Access after a refund
+                      <tng-tooltip
+                        ariaLabel="Help for access after a refund"
+                        [text]="
+                          policyHelp(
+                            'lifecycle.refund_entitlements',
+                            form.controls.policy.controls.refundEntitlements
+                              .value
+                          )
+                        "
+                        triggerLabel="?"
+                      />
+                    </span>
                     <tng-select
                       aria-label="Refund entitlements"
                       [options]="options('lifecycle.refund_entitlements')"
@@ -458,7 +682,20 @@
                     />
                   </label>
                   <label>
-                    <span>Chargeback entitlements</span>
+                    <span class="policy-label">
+                      Access after a chargeback
+                      <tng-tooltip
+                        ariaLabel="Help for access after a chargeback"
+                        [text]="
+                          policyHelp(
+                            'lifecycle.chargeback_entitlements',
+                            form.controls.policy.controls.chargebackEntitlements
+                              .value
+                          )
+                        "
+                        triggerLabel="?"
+                      />
+                    </span>
                     <tng-select
                       aria-label="Chargeback entitlements"
                       [options]="options('lifecycle.chargeback_entitlements')"
@@ -598,7 +835,20 @@
                 <legend>Checkout</legend>
                 <div class="form-grid">
                   <label>
-                    <span>Presentation</span>
+                    <span class="policy-label">
+                      Where checkout opens
+                      <tng-tooltip
+                        ariaLabel="Help for where checkout opens"
+                        [text]="
+                          policyHelp(
+                            'checkout.presentation',
+                            form.controls.policy.controls.checkoutPresentation
+                              .value
+                          )
+                        "
+                        triggerLabel="?"
+                      />
+                    </span>
                     <tng-select
                       aria-label="Checkout presentation"
                       [options]="options('checkout.presentation')"
@@ -614,7 +864,19 @@
                     />
                   </label>
                   <label>
-                    <span>Confirmation</span>
+                    <span class="policy-label">
+                      How payment is confirmed
+                      <tng-tooltip
+                        ariaLabel="Help for payment confirmation"
+                        [text]="
+                          policyHelp(
+                            'checkout.confirmation',
+                            form.controls.policy.controls.confirmation.value
+                          )
+                        "
+                        triggerLabel="?"
+                      />
+                    </span>
                     <tng-select
                       aria-label="Checkout confirmation"
                       [options]="options('checkout.confirmation')"
@@ -669,7 +931,13 @@
                   <div>
                     <dt>Customer</dt>
                     <dd>
-                      {{ form.controls.policy.controls.customerScope.value }} ·
+                      {{
+                        policyOptionLabel(
+                          form.controls.policy.controls.customerScope.value,
+                          'customer.scope'
+                        )
+                      }}
+                      ·
                       {{ form.controls.policy.controls.freeAllowance.value }}
                       Free
                     </dd>
@@ -677,26 +945,45 @@
                   <div>
                     <dt>Onboarding</dt>
                     <dd>
-                      {{ form.controls.policy.controls.initialPlan.value }}
+                      {{
+                        policyOptionLabel(
+                          form.controls.policy.controls.initialPlan.value,
+                          'onboarding.initial_plan'
+                        )
+                      }}
                     </dd>
                   </div>
                   <div>
                     <dt>Catalogue</dt>
                     <dd>
-                      {{ form.controls.policy.controls.catalogueAccess.value }}
+                      {{
+                        policyOptionLabel(
+                          form.controls.policy.controls.catalogueAccess.value,
+                          'catalogue.access'
+                        )
+                      }}
                     </dd>
                   </div>
                   <div>
                     <dt>Paid changes</dt>
                     <dd>
-                      {{ form.controls.policy.controls.paidToPaid.value }}
+                      {{
+                        policyOptionLabel(
+                          form.controls.policy.controls.paidToPaid.value,
+                          'lifecycle.paid_to_paid'
+                        )
+                      }}
                     </dd>
                   </div>
                   <div>
                     <dt>Cancellation</dt>
                     <dd>
                       {{
-                        form.controls.policy.controls.cancellationDefault.value
+                        policyOptionLabel(
+                          form.controls.policy.controls.cancellationDefault
+                            .value,
+                          'lifecycle.cancellation_default'
+                        )
                       }}
                     </dd>
                   </div>

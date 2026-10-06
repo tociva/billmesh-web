@@ -38,7 +38,33 @@
   <tng-card variant="outline" padding="lg">
     <div class="panel-stack">
       @if (!loading() && !products().length) {
-        <p class="state">No products match these filters.</p>
+        <section class="empty-state" aria-labelledby="empty-products-heading">
+          <div class="empty-state__content">
+            <p class="eyebrow">Product catalogue</p>
+            <h3 id="empty-products-heading">
+              {{
+                query() || status() !== 'all'
+                  ? 'No products match these filters'
+                  : 'Create your first product'
+              }}
+            </h3>
+            <p>
+              {{
+                query() || status() !== 'all'
+                  ? 'Try changing the filters, or create a new product.'
+                  : 'Add pricing, credits, and entitlements to begin building your catalogue.'
+              }}
+            </p>
+            <tng-button
+              type="button"
+              appearance="solid"
+              tone="primary"
+              (click)="createProduct()"
+            >
+              Create product
+            </tng-button>
+          </div>
+        </section>
       } @else {
         <tng-table
           ariaLabel="Products"
@@ -115,19 +141,18 @@
             </div>
           </ng-template>
         </tng-table>
+        <div class="pagination-footer">
+          <tng-paginator
+            ariaLabel="Product pagination"
+            [pageIndex]="pageIndex()"
+            [pageSize]="pageSize()"
+            [pageSizeOptions]="[10, 25, 50, 100]"
+            [totalItems]="total()"
+            [disabled]="loading()"
+            (pageChange)="changePage($event)"
+          />
+        </div>
       }
-
-      <div class="pagination-footer">
-        <tng-paginator
-          ariaLabel="Product pagination"
-          [pageIndex]="pageIndex()"
-          [pageSize]="pageSize()"
-          [pageSizeOptions]="[10, 25, 50, 100]"
-          [totalItems]="total()"
-          [disabled]="loading()"
-          (pageChange)="changePage($event)"
-        />
-      </div>
     </div>
   </tng-card>
 </main>

@@ -23,9 +23,260 @@ import {
   TngSelectComponent,
   TngStepperComponent,
   TngTextareaComponent,
+  TngTooltipComponent,
 } from '@tailng-ui/components';
 import { catalogueMessage, catalogueReturnUrl } from '../../catalogue.helpers';
 import { ProductEntitlementsComponent } from '../product-entitlements/product-entitlements.component';
+
+type PolicyOption = Readonly<{
+  value: string;
+  label: string;
+  description: string;
+}>;
+
+const POLICY_OPTION_COPY: Readonly<
+  Record<string, Readonly<{ label: string; description: string }>>
+> = {
+  identity: {
+    label: 'Individual customer',
+    description: 'Apply billing separately to each signed-in identity.',
+  },
+  organization: {
+    label: 'Organization',
+    description: 'Apply billing to the customer organization as a whole.',
+  },
+  external_customer: {
+    label: 'External customer',
+    description:
+      'Use a customer identity supplied by the integrating application.',
+  },
+  retain: {
+    label: 'Keep unchanged',
+    description: 'Preserve the current owner, access, or entitlement state.',
+  },
+  reevaluate: {
+    label: 'Re-evaluate eligibility',
+    description: 'Check eligibility again when ownership changes.',
+  },
+  unsupported: {
+    label: 'Do not allow transfers',
+    description: 'Reject ownership transfers for this product.',
+  },
+  preauthorized_recheck: {
+    label: 'Recheck pre-authorized transfer',
+    description: 'Allow only pre-authorized transfers that pass a fresh check.',
+  },
+  reject: {
+    label: 'Reject the request',
+    description: 'Refuse the operation when the customer is not eligible.',
+  },
+  require_paid_checkout: {
+    label: 'Require paid checkout',
+    description: 'Send the customer through paid checkout before continuing.',
+  },
+  automatic_default: {
+    label: 'Assign the default plan automatically',
+    description: 'Create the subscription using the configured default plan.',
+  },
+  explicit_transition: {
+    label: 'Require an explicit plan selection',
+    description:
+      'Wait for the application to request a specific plan transition.',
+  },
+  restricted: {
+    label: 'Create restricted access',
+    description:
+      'Create the customer with limited access instead of rejecting them.',
+  },
+  anonymize: {
+    label: 'Anonymize billing data',
+    description:
+      'Remove identifying customer data when the account is deleted.',
+  },
+  public: {
+    label: 'Public access',
+    description: 'Allow catalogue access without an application token.',
+  },
+  application_token: {
+    label: 'Application token required',
+    description:
+      'Require an authorized application token to read the catalogue.',
+  },
+  expire: {
+    label: 'End access when the trial expires',
+    description:
+      'Do not automatically convert the trial to a paid subscription.',
+  },
+  require_checkout: {
+    label: 'Require checkout to continue',
+    description:
+      'Ask the customer to complete checkout at the end of the trial.',
+  },
+  automatic_mandate: {
+    label: 'Convert using the saved mandate',
+    description:
+      'Charge the saved recurring mandate and convert automatically.',
+  },
+  checkout: {
+    label: 'Require checkout',
+    description: 'Use checkout for changes between paid plans.',
+  },
+  mandate_proration: {
+    label: 'Prorate using the saved mandate',
+    description: 'Apply the paid-plan change and charge the prorated amount.',
+  },
+  period_end: {
+    label: 'At the end of the billing period',
+    description: 'Schedule the change for the current billing period end.',
+  },
+  immediate: {
+    label: 'Immediately',
+    description: 'Apply the change immediately instead of scheduling it.',
+  },
+  none: {
+    label: 'No automatic refund',
+    description: 'Do not issue an automatic refund.',
+  },
+  prorated: {
+    label: 'Prorated refund',
+    description: 'Refund the unused portion of the billing period.',
+  },
+  full: {
+    label: 'Full refund',
+    description: 'Refund the full eligible charge.',
+  },
+  resume: {
+    label: 'Resume the existing subscription',
+    description: 'Restore the existing subscription when possible.',
+  },
+  new_transition: {
+    label: 'Start a new plan transition',
+    description: 'Use a new transition to reactivate the subscription.',
+  },
+  block_new: {
+    label: 'Block new usage',
+    description: 'Keep current access but prevent additional metered usage.',
+  },
+  grace_period: {
+    label: 'Allow a grace period',
+    description: 'Keep access temporarily for the configured grace period.',
+  },
+  reject_transition: {
+    label: 'Reject the plan change',
+    description:
+      'Prevent the transition while current usage exceeds the new limit.',
+  },
+  provider_event: {
+    label: 'Renew from payment-provider events',
+    description:
+      'Treat verified payment-provider events as the renewal authority.',
+  },
+  manual: {
+    label: 'Renew manually',
+    description: 'Require an explicit renewal action from the application.',
+  },
+  cancel: {
+    label: 'Cancel the subscription',
+    description: 'Cancel access when the subscription expires.',
+  },
+  downgrade_to_default: {
+    label: 'Move to the default plan',
+    description: 'Downgrade the customer to the configured default plan.',
+  },
+  revoke: {
+    label: 'Revoke access',
+    description: 'Remove the related product entitlements.',
+  },
+  inline: {
+    label: 'Embedded checkout',
+    description: 'Render checkout inside the integrating application.',
+  },
+  modal: {
+    label: 'Checkout dialog',
+    description: 'Open checkout in a dialog over the application.',
+  },
+  provider_hosted: {
+    label: 'Payment-provider page',
+    description:
+      'Redirect the customer to a page hosted by the payment provider.',
+  },
+  webhook: {
+    label: 'Confirm by webhook',
+    description: 'Wait for a verified webhook before confirming payment.',
+  },
+  poll_and_webhook: {
+    label: 'Poll and confirm by webhook',
+    description:
+      'Poll for progress while retaining the webhook as final authority.',
+  },
+};
+
+const POLICY_FIELD_HELP: Readonly<Record<string, string>> = {
+  'customer.scope': 'Defines what owns subscriptions and usage.',
+  'customer.ownership_change':
+    'Controls what happens when the billing owner changes.',
+  'customer.ownership_transfer':
+    'Controls whether billing ownership can be transferred.',
+  'customer.ineligible_owner_action':
+    'Controls what happens when a new owner is not eligible.',
+  'onboarding.initial_plan':
+    'Controls how a new customer receives their first plan.',
+  'onboarding.ineligible_action':
+    'Controls onboarding when the customer is not eligible.',
+  'onboarding.deletion_retention':
+    'Controls billing data retained after account deletion.',
+  'catalogue.access': 'Controls who can read the product catalogue.',
+  'catalogue.trial_conversion': 'Controls what happens when a trial ends.',
+  'lifecycle.paid_to_paid': 'Controls changes from one paid plan to another.',
+  'lifecycle.cancellation_default':
+    'Sets the default time at which cancellation takes effect.',
+  'lifecycle.immediate_cancel_refund':
+    'Sets the refund applied to immediate cancellation.',
+  'lifecycle.reactivation':
+    'Controls how a cancelled subscription is restored.',
+  'lifecycle.over_limit':
+    'Controls a downgrade when usage exceeds the destination plan.',
+  'lifecycle.renewal': 'Defines what event authorizes subscription renewal.',
+  'lifecycle.dunning': 'Controls access while payment recovery is in progress.',
+  'lifecycle.expiration': 'Controls what happens when a subscription expires.',
+  'lifecycle.refund_entitlements': 'Controls product access after a refund.',
+  'lifecycle.chargeback_entitlements':
+    'Controls product access after a chargeback.',
+  'checkout.presentation': 'Controls where the customer completes checkout.',
+  'checkout.confirmation':
+    'Controls how Billmesh confirms checkout completion.',
+};
+
+const POLICY_PATH_OPTION_COPY: Readonly<
+  Record<string, Readonly<{ label: string; description: string }>>
+> = {
+  'customer.ownership_change:retain': {
+    label: 'Keep existing eligibility',
+    description: 'Keep the current eligibility result when ownership changes.',
+  },
+  'customer.ownership_transfer:retain': {
+    label: 'Transfer without rechecking',
+    description:
+      'Transfer billing ownership without running another eligibility check.',
+  },
+  'onboarding.deletion_retention:retain': {
+    label: 'Retain billing history',
+    description:
+      'Keep the billing history after the customer account is deleted.',
+  },
+  'lifecycle.dunning:none': {
+    label: 'No recovery grace period',
+    description: 'Do not extend access while attempting to recover payment.',
+  },
+  'lifecycle.refund_entitlements:retain': {
+    label: 'Keep access',
+    description: 'Keep product access after a refund.',
+  },
+  'lifecycle.chargeback_entitlements:retain': {
+    label: 'Keep access',
+    description: 'Keep product access after a chargeback.',
+  },
+};
 
 @Component({
   selector: 'billmesh-product-configuration',
@@ -40,6 +291,7 @@ import { ProductEntitlementsComponent } from '../product-entitlements/product-en
     TngSelectComponent,
     TngStepperComponent,
     TngTextareaComponent,
+    TngTooltipComponent,
     ProductEntitlementsComponent,
   ],
   templateUrl: './product-configuration.component.html',
@@ -295,8 +547,26 @@ export class ProductConfigurationComponent {
     });
   }
 
-  protected options(path: string): readonly string[] {
-    return this.policyMetadata()?.options[path] ?? [];
+  protected options(path: string): readonly PolicyOption[] {
+    return (this.policyMetadata()?.options[path] ?? []).map((value) => {
+      const copy = this.optionCopy(path, value);
+      return {
+        value,
+        label: copy?.label ?? this.humanize(value),
+        description:
+          copy?.description ?? `Use ${this.humanize(value).toLowerCase()}.`,
+      };
+    });
+  }
+
+  protected policyOptionLabel(value: string, path = ''): string {
+    return this.optionCopy(path, value)?.label ?? this.humanize(value);
+  }
+
+  protected policyHelp(path: string, value: string): string {
+    const field = POLICY_FIELD_HELP[path] ?? 'Controls this billing behavior.';
+    const option = this.optionCopy(path, value)?.description;
+    return option ? `${field} Current choice: ${option}` : field;
   }
 
   protected policyValidationError(): string {
@@ -492,6 +762,20 @@ export class ProductConfigurationComponent {
       .split(/\r?\n/)
       .map((entry) => entry.trim().replace(/\/$/, ''))
       .filter(Boolean);
+  }
+
+  private humanize(value: string): string {
+    const words = value.replaceAll('_', ' ').trim();
+    return words ? `${words[0].toUpperCase()}${words.slice(1)}` : value;
+  }
+
+  private optionCopy(
+    path: string,
+    value: string,
+  ): Readonly<{ label: string; description: string }> | undefined {
+    return (
+      POLICY_PATH_OPTION_COPY[`${path}:${value}`] ?? POLICY_OPTION_COPY[value]
+    );
   }
 
   private returnUrl(): string {

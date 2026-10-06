@@ -178,6 +178,7 @@ export interface Plan {
   readonly product_id: string;
   readonly product: string;
   readonly slug: string;
+  readonly plan_family_id: string;
   readonly name: string;
   readonly price_minor: number;
   readonly currency: string;
@@ -209,6 +210,7 @@ export interface ProductUpdate {
 
 export interface PlanCreate {
   readonly slug: string;
+  readonly plan_family_id?: string;
   readonly name: string;
   readonly price_minor: number;
   readonly currency: string;
@@ -221,6 +223,7 @@ export interface PlanCreate {
 
 export interface PlanUpdate {
   readonly version: number;
+  readonly plan_family_id?: string;
   readonly name?: string;
   readonly price_minor?: number;
   readonly currency?: string;

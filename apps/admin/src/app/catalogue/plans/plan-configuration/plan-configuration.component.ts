@@ -91,6 +91,15 @@ export class PlanConfigurationComponent {
         Validators.pattern(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/),
       ],
     ],
+    planFamilyId: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(2),
+        Validators.maxLength(63),
+        Validators.pattern(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/),
+      ],
+    ],
     name: ['', [Validators.required, Validators.maxLength(120)]],
     price: [
       '0.00',
@@ -143,6 +152,7 @@ export class PlanConfigurationComponent {
     this.saving.set(true);
     this.error.set('');
     const commercialPayload = {
+      plan_family_id: value.planFamilyId.trim(),
       name: value.name.trim(),
       price_minor: priceMinor,
       currency: value.currency.trim().toUpperCase(),
@@ -219,6 +229,7 @@ export class PlanConfigurationComponent {
         this.plan.set(plan);
         this.form.reset({
           slug: plan.slug,
+          planFamilyId: plan.plan_family_id,
           name: plan.name,
           price: (plan.price_minor / 100).toFixed(2),
           currency: plan.currency,

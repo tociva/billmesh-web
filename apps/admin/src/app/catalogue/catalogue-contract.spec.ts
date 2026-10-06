@@ -120,6 +120,7 @@ describe('CatalogueAdminService', () => {
     catalogue
       .createPlan('product-1', {
         slug: 'professional',
+        plan_family_id: 'professional',
         name: 'Professional',
         price_minor: 9900,
         currency: 'INR',
@@ -133,6 +134,7 @@ describe('CatalogueAdminService', () => {
       'https://api-local.billme.sh/api/v1/admin/products/product-1/plans',
     );
     expect(create.request.method).toBe('POST');
+    expect(create.request.body.plan_family_id).toBe('professional');
     expect(create.request.body.entitlement_schema_version).toBe(2);
     expect(create.request.headers.get('X-CSRF-Token')).toBe('admin-csrf');
     create.flush({});
@@ -142,11 +144,18 @@ describe('CatalogueAdminService', () => {
       .expectOne('https://api-local.billme.sh/api/v1/admin/plans/plan-1')
       .flush({});
 
-    catalogue.updatePlan('plan-1', { version: 2, active: false }).subscribe();
+    catalogue
+      .updatePlan('plan-1', {
+        version: 2,
+        plan_family_id: 'professional',
+        active: false,
+      })
+      .subscribe();
     const update = requests.expectOne(
       'https://api-local.billme.sh/api/v1/admin/plans/plan-1',
     );
     expect(update.request.method).toBe('PATCH');
+    expect(update.request.body.plan_family_id).toBe('professional');
     expect(update.request.headers.get('X-CSRF-Token')).toBe('admin-csrf');
     update.flush({});
   });

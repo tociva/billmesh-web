@@ -1,5 +1,5 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { CatalogueAdminService } from '@billmesh/api-client';
 import { DEFAULT_BILLING_POLICY, type Product } from '@billmesh/domain';
 import { of } from 'rxjs';
@@ -23,9 +23,7 @@ const product: Product = {
 describe('ProductListComponent', () => {
   let fixture: ComponentFixture<ProductListComponent>;
   const service = {
-    listProducts: vi.fn(() =>
-      of({ items: [product], total: 1, limit: 25, offset: 0 }),
-    ),
+    listProducts: vi.fn(),
     updateProduct: vi.fn(() => of({ ...product, active: true })),
   };
 
@@ -39,11 +37,18 @@ describe('ProductListComponent', () => {
         { provide: CatalogueAdminService, useValue: service },
       ],
     }).compileComponents();
-    fixture = TestBed.createComponent(ProductListComponent);
-    fixture.detectChanges();
   });
 
+  function render(products: readonly Product[] = [product]): void {
+    service.listProducts.mockReturnValue(
+      of({ items: products, total: products.length, limit: 25, offset: 0 }),
+    );
+    fixture = TestBed.createComponent(ProductListComponent);
+    fixture.detectChanges();
+  }
+
   it('loads the first product page from the server', () => {
+    render();
     expect(service.listProducts).toHaveBeenCalledWith({
       status: 'all',
       query: '',
@@ -60,9 +65,31 @@ describe('ProductListComponent', () => {
   });
 
   it('uses the shared filter popover and TailNG paginator', () => {
+    render();
     expect(
       fixture.nativeElement.querySelector('billmesh-filter-popover'),
     ).not.toBeNull();
     expect(fixture.nativeElement.querySelector('tng-paginator')).not.toBeNull();
+  });
+
+  it('shows a create action inside the table container when empty', () => {
+    const router = TestBed.inject(Router);
+    const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    render([]);
+
+    const emptyState = fixture.nativeElement.querySelector(
+      'tng-card .empty-state',
+    ) as HTMLElement | null;
+    expect(emptyState?.textContent).toContain('Create your first product');
+    expect(emptyState?.textContent).toContain('Create product');
+    expect(fixture.nativeElement.querySelector('tng-paginator')).toBeNull();
+
+    const createButton = emptyState?.querySelector(
+      'tng-button',
+    ) as HTMLElement | null;
+    createButton?.click();
+    expect(navigate).toHaveBeenCalledWith(['/app/catalogue/create'], {
+      queryParams: { burl: '/' },
+    });
   });
 });
