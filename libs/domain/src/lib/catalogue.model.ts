@@ -180,11 +180,18 @@ export interface Plan {
   readonly slug: string;
   readonly plan_family_id: string;
   readonly name: string;
+  readonly description?: string;
   readonly price_minor: number;
   readonly currency: string;
   readonly included_credits: number;
   readonly entitlements: Readonly<Record<string, unknown>>;
   readonly billing_interval: 'monthly' | 'annual';
+  readonly billing_model?: 'free' | 'paid';
+  readonly selectable?: boolean;
+  readonly default_for_product?: boolean;
+  readonly checkout_enabled?: boolean;
+  readonly effective_from?: string;
+  readonly effective_to?: string | null;
   readonly active: boolean;
   readonly version: number;
   readonly created_at: string;
@@ -212,13 +219,20 @@ export interface PlanCreate {
   readonly slug: string;
   readonly plan_family_id?: string;
   readonly name: string;
+  readonly description?: string;
   readonly price_minor: number;
   readonly currency: string;
   readonly included_credits: number;
   readonly entitlements: Readonly<Record<string, unknown>>;
   readonly entitlement_schema_version?: number;
   readonly billing_interval: 'monthly' | 'annual';
+  readonly billing_model?: 'free' | 'paid';
   readonly active?: boolean;
+  readonly selectable?: boolean;
+  readonly default_for_product?: boolean;
+  readonly checkout_enabled?: boolean;
+  readonly effective_from?: string;
+  readonly effective_to?: string | null;
 }
 
 export interface PlanUpdate {

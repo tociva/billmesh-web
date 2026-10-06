@@ -72,6 +72,27 @@ describe('ProductListComponent', () => {
     expect(fixture.nativeElement.querySelector('tng-paginator')).not.toBeNull();
   });
 
+  it('uses the full catalogue area as the tngFileUpload drop zone', () => {
+    render();
+    const dropZone = fixture.nativeElement.querySelector(
+      'main[data-file-upload]',
+    ) as HTMLElement | null;
+    expect(dropZone).not.toBeNull();
+
+    const buttons = Array.from(
+      fixture.nativeElement.querySelectorAll('tng-button'),
+    ) as HTMLElement[];
+    buttons
+      .find((button) => button.textContent?.includes('Import JSON'))
+      ?.click();
+    fixture.detectChanges();
+
+    expect(
+      dropZone?.querySelector('input[type="file"]')?.getAttribute('accept'),
+    ).toBe('.json,application/json');
+    expect(dropZone?.textContent).toContain('One JSON file, up to 1 MB');
+  });
+
   it('shows a create action inside the table container when empty', () => {
     const router = TestBed.inject(Router);
     const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);

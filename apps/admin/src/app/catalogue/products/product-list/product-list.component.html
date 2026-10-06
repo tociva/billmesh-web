@@ -1,4 +1,23 @@
-<main class="catalogue-page">
+<main
+  class="catalogue-page catalogue-upload-area"
+  tngFileUpload
+  accept=".json,application/json"
+  [multiple]="false"
+  [maxSize]="importMaxSize"
+  [disabled]="importing() || exporting()"
+  (filesSelected)="handleDroppedFile($event)"
+  (filesRejected)="handleRejectedFile($event)"
+  (dragStateChange)="handleDragState($event)"
+>
+  @if (uploadDragState() === 'dragging') {
+    <div class="catalogue-drop-overlay" aria-hidden="true">
+      <div>
+        <strong>Drop catalogue JSON to import</strong>
+        <span>Release anywhere in this area</span>
+      </div>
+    </div>
+  }
+
   <header class="page-heading">
     <div>
       <p class="eyebrow">Catalogue</p>
@@ -17,6 +36,22 @@
       />
       <tng-button
         type="button"
+        appearance="outline"
+        [disabled]="exporting() || importing()"
+        (click)="exportCatalogue()"
+      >
+        {{ exporting() ? 'Exporting…' : 'Export JSON' }}
+      </tng-button>
+      <tng-button
+        type="button"
+        appearance="outline"
+        [disabled]="exporting() || importing()"
+        (click)="toggleImport()"
+      >
+        Import JSON
+      </tng-button>
+      <tng-button
+        type="button"
         appearance="solid"
         tone="primary"
         (click)="createProduct()"
@@ -25,6 +60,94 @@
       </tng-button>
     </div>
   </header>
+
+  @if (transferError()) {
+    <p class="notice notice--error" role="alert">{{ transferError() }}</p>
+  }
+
+  @if (transferSuccess()) {
+    <p class="notice notice--success" role="status">
+      {{ transferSuccess() }}
+    </p>
+  }
+
+  @if (importOpen()) {
+    <tng-card variant="outline" padding="lg">
+      <section class="import-panel" aria-labelledby="import-heading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Portable catalogue</p>
+            <h3 id="import-heading">Import catalogue JSON</h3>
+            <p>
+              Import creates new products and their plans. Existing product
+              slugs are rejected and never overwritten.
+            </p>
+          </div>
+          <tng-button
+            type="button"
+            appearance="outline"
+            [disabled]="importing()"
+            (click)="toggleImport()"
+            >Close</tng-button
+          >
+        </div>
+
+        <div class="import-drop-zone">
+          <input
+            #catalogueFileInput
+            class="visually-hidden"
+            type="file"
+            accept=".json,application/json"
+            [disabled]="importing()"
+            (change)="handleFileInput($event)"
+          />
+          <div>
+            <strong>Drop a catalogue JSON file here</strong>
+            <span>One JSON file, up to 1 MB</span>
+          </div>
+          <tng-button
+            type="button"
+            appearance="outline"
+            [disabled]="importing()"
+            (click)="catalogueFileInput.click()"
+            >Choose file</tng-button
+          >
+        </div>
+
+        @if (selectedImport(); as selected) {
+          <div class="import-summary">
+            <div>
+              <strong>{{ selected.fileName }}</strong>
+              <span>
+                {{ selected.transfer.products.length }} product(s) ·
+                {{ importPlanCount(selected.transfer) }} plan(s)
+              </span>
+            </div>
+            <div class="actions">
+              <tng-button
+                type="button"
+                appearance="outline"
+                [disabled]="importing()"
+                (click)="clearImport()"
+                >Remove</tng-button
+              >
+              <tng-button
+                type="button"
+                appearance="solid"
+                tone="primary"
+                [disabled]="
+                  importing() || selected.transfer.products.length === 0
+                "
+                (click)="importCatalogue()"
+              >
+                {{ importing() ? 'Importing…' : 'Import catalogue' }}
+              </tng-button>
+            </div>
+          </div>
+        }
+      </section>
+    </tng-card>
+  }
 
   @if (error()) {
     <div class="notice notice--error" role="alert">
