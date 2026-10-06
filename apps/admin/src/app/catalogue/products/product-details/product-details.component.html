@@ -43,7 +43,7 @@
   }
 
   <tng-card variant="outline" padding="lg">
-    @if (loadingProduct()) {
+    @if (loading()) {
       <p class="state" role="status">Loading product…</p>
     } @else if (product(); as item) {
       <div class="panel-stack">
@@ -156,126 +156,7 @@
           }
         </section>
 
-        <section class="plans-section" aria-labelledby="plans-heading">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Pricing</p>
-              <h3 id="plans-heading">Subscription plans</h3>
-            </div>
-            <div class="actions">
-              <billmesh-filter-popover
-                ariaLabel="Plan filters"
-                title="Filter plans"
-                [fields]="planFilterFields"
-                [value]="planFilterValue()"
-                (filterApply)="applyPlanFilters($event)"
-              />
-              <tng-button
-                type="button"
-                appearance="solid"
-                tone="primary"
-                [disabled]="!item.active"
-                (click)="createPlan()"
-                >Create plan</tng-button
-              >
-            </div>
-          </div>
-
-          @if (!loadingPlans() && !plans().length) {
-            <p class="state">No plans match these filters.</p>
-          } @else {
-            <tng-table
-              ariaLabel="Subscription plans"
-              density="comfortable"
-              [columns]="planColumns"
-              [items]="plans()"
-              [loading]="loadingPlans()"
-              [sortActive]="planSort()"
-              [sortDirection]="planDirection()"
-              (sortChange)="changePlanSort($event)"
-            >
-              <ng-template tngTableCellTemplate="name" let-row="row">
-                <button
-                  type="button"
-                  class="link-button"
-                  (click)="viewPlan(row)"
-                >
-                  {{ row.name }}
-                </button>
-              </ng-template>
-              <ng-template tngTableCellTemplate="price" let-row="row">{{
-                formatPrice(row)
-              }}</ng-template>
-              <ng-template
-                tngTableCellTemplate="included_credits"
-                let-row="row"
-                >{{ row.included_credits }}</ng-template
-              >
-              <ng-template tngTableCellTemplate="status" let-row="row">
-                <span
-                  [class]="row.active ? 'status active' : 'status archived'"
-                  >{{ row.active ? 'Active' : 'Inactive' }}</span
-                >
-              </ng-template>
-              <ng-template tngTableCellTemplate="actions" let-row="row">
-                <div class="row-actions">
-                  <button
-                    type="button"
-                    class="icon-action"
-                    aria-label="View plan"
-                    title="View plan"
-                    (click)="viewPlan(row)"
-                  >
-                    <tng-icon icon="eye" aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
-                    class="icon-action"
-                    aria-label="Edit plan"
-                    title="Edit plan"
-                    (click)="editPlan(row)"
-                  >
-                    <tng-icon icon="pencil" aria-hidden="true" />
-                  </button>
-                  @if (row.active) {
-                    <button
-                      type="button"
-                      class="icon-action danger"
-                      aria-label="Archive plan"
-                      title="Archive plan"
-                      (click)="archivePlan(row)"
-                    >
-                      <tng-icon icon="trash2" aria-hidden="true" />
-                    </button>
-                  } @else {
-                    <button
-                      type="button"
-                      class="icon-action"
-                      aria-label="Reactivate plan"
-                      title="Reactivate plan"
-                      [disabled]="!item.active"
-                      (click)="reactivatePlan(row)"
-                    >
-                      <tng-icon icon="archiveRestore" aria-hidden="true" />
-                    </button>
-                  }
-                </div>
-              </ng-template>
-            </tng-table>
-          }
-
-          <div class="pagination-footer">
-            <tng-paginator
-              ariaLabel="Plan pagination"
-              [pageIndex]="planPageIndex()"
-              [pageSize]="planPageSize()"
-              [pageSizeOptions]="[10, 25, 50]"
-              [totalItems]="planTotal()"
-              [disabled]="loadingPlans()"
-              (pageChange)="changePlanPage($event)"
-            />
-          </div>
-        </section>
+        <billmesh-plan-list [product]="item" />
       </div>
     }
   </tng-card>

@@ -1,5 +1,11 @@
-import { DatePipe } from '@angular/common';
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  Input,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CatalogueAdminService } from '@billmesh/api-client';
@@ -11,7 +17,6 @@ import {
 } from '@billmesh/ui';
 import {
   TngButtonComponent,
-  TngCardComponent,
   TngPaginator,
   TngTable,
   TngTableCellTpl,
@@ -25,53 +30,50 @@ import { TngIcon } from '@tailng-ui/icons';
 import type { Subscription } from 'rxjs';
 import {
   catalogueMessage,
-  catalogueReturnUrl,
   formatPlanPrice,
   nonNegativeInteger,
   pageSize,
-} from '../catalogue.helpers';
+} from '../../catalogue.helpers';
 
 type PlanStatus = 'all' | 'active' | 'inactive';
 type PlanSort =
   'slug' | 'name' | 'price' | 'status' | 'created_at' | 'updated_at';
 
 @Component({
-  selector: 'billmesh-product-view',
+  selector: 'billmesh-plan-list',
   imports: [
-    DatePipe,
     FilterPopoverComponent,
     TngButtonComponent,
-    TngCardComponent,
     TngIcon,
     TngPaginator,
     TngTable,
     TngTableCellTpl,
   ],
-  templateUrl: './product-view.component.html',
-  styleUrl: '../catalogue.shared.css',
+  templateUrl: './plan-list.component.html',
+  styleUrl: '../../catalogue.shared.css',
 })
-export class ProductViewComponent {
+export class PlanListComponent {
+  @Input({ required: true }) product!: Product;
+
   private readonly catalogue = inject(CatalogueAdminService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly id = this.route.snapshot.paramMap.get('id')!;
+  private readonly productId = this.route.snapshot.paramMap.get('productId')!;
   private planRequest?: Subscription;
 
-  protected readonly product = signal<Product | null>(null);
   protected readonly plans = signal<readonly Plan[]>([]);
-  protected readonly planTotal = signal(0);
-  protected readonly loadingProduct = signal(true);
-  protected readonly loadingPlans = signal(true);
+  protected readonly total = signal(0);
+  protected readonly loading = signal(true);
   protected readonly error = signal('');
-  protected readonly planQuery = signal('');
-  protected readonly planStatus = signal<PlanStatus>('all');
-  protected readonly planPageIndex = signal(0);
-  protected readonly planPageSize = signal(10);
-  protected readonly planSort = signal<PlanSort>('price');
-  protected readonly planDirection = signal<'asc' | 'desc'>('asc');
+  protected readonly query = signal('');
+  protected readonly status = signal<PlanStatus>('all');
+  protected readonly pageIndex = signal(0);
+  protected readonly pageSize = signal(10);
+  protected readonly sort = signal<PlanSort>('price');
+  protected readonly direction = signal<'asc' | 'desc'>('asc');
 
-  protected readonly planColumns: readonly TngTableColumn<Plan>[] = [
+  protected readonly columns: readonly TngTableColumn<Plan>[] = [
     { id: 'name', label: 'Name', sortable: true, width: '15rem' },
     { id: 'slug', label: 'Slug', sortable: true, width: '13rem' },
     { id: 'price', label: 'Price', sortable: true, width: '10rem' },
@@ -85,7 +87,7 @@ export class ProductViewComponent {
       width: '12rem',
     },
   ];
-  protected readonly planFilterFields: readonly FilterPopoverField[] = [
+  protected readonly filterFields: readonly FilterPopoverField[] = [
     {
       id: 'query',
       label: 'Search',
@@ -103,70 +105,53 @@ export class ProductViewComponent {
       ],
     },
   ];
-  protected readonly planFilterValue = computed<FilterPopoverValue>(() => ({
-    ...(this.planQuery() ? { query: this.planQuery() } : {}),
-    ...(this.planStatus() !== 'all' ? { status: this.planStatus() } : {}),
+  protected readonly filterValue = computed<FilterPopoverValue>(() => ({
+    ...(this.query() ? { query: this.query() } : {}),
+    ...(this.status() !== 'all' ? { status: this.status() } : {}),
   }));
 
   constructor() {
-    this.loadProduct();
     this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
       const status = params.get('pstatus');
-      this.planQuery.set(params.get('pquery')?.trim() ?? '');
-      this.planStatus.set(
+      this.query.set(params.get('pquery')?.trim() ?? '');
+      this.status.set(
         status === 'active' || status === 'inactive' ? status : 'all',
       );
-      this.planPageIndex.set(nonNegativeInteger(params.get('ppage')));
-      this.planPageSize.set(pageSize(params.get('psize'), [10, 25, 50], 10));
-      this.planSort.set(this.readPlanSort(params.get('psort')));
-      this.planDirection.set(
-        params.get('pdirection') === 'desc' ? 'desc' : 'asc',
-      );
+      this.pageIndex.set(nonNegativeInteger(params.get('ppage')));
+      this.pageSize.set(pageSize(params.get('psize'), [10, 25, 50], 10));
+      this.sort.set(this.readSort(params.get('psort')));
+      this.direction.set(params.get('pdirection') === 'desc' ? 'desc' : 'asc');
       this.loadPlans();
     });
   }
 
-  protected loadProduct(): void {
-    this.loadingProduct.set(true);
-    this.catalogue.getProduct(this.id).subscribe({
-      next: (product) => {
-        this.product.set(product);
-        this.loadingProduct.set(false);
-      },
-      error: (error: unknown) => {
-        this.error.set(catalogueMessage(error));
-        this.loadingProduct.set(false);
-      },
-    });
-  }
-
   protected loadPlans(): void {
-    this.loadingPlans.set(true);
+    this.loading.set(true);
     this.planRequest?.unsubscribe();
     this.planRequest = this.catalogue
-      .listPlans(this.id, {
-        status: this.planStatus(),
-        query: this.planQuery(),
-        limit: this.planPageSize(),
-        offset: this.planPageIndex() * this.planPageSize(),
-        sort: this.planSort(),
-        direction: this.planDirection(),
+      .listPlans(this.productId, {
+        status: this.status(),
+        query: this.query(),
+        limit: this.pageSize(),
+        offset: this.pageIndex() * this.pageSize(),
+        sort: this.sort(),
+        direction: this.direction(),
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (page) => {
           this.plans.set(page.items);
-          this.planTotal.set(page.total);
-          this.loadingPlans.set(false);
+          this.total.set(page.total);
+          this.loading.set(false);
         },
         error: (error: unknown) => {
           this.error.set(catalogueMessage(error));
-          this.loadingPlans.set(false);
+          this.loading.set(false);
         },
       });
   }
 
-  protected applyPlanFilters(value: FilterPopoverValue): void {
+  protected applyFilters(value: FilterPopoverValue): void {
     void this.updateQuery({
       pquery: value['query'] || null,
       pstatus: value['status'] || null,
@@ -174,14 +159,14 @@ export class ProductViewComponent {
     });
   }
 
-  protected changePlanPage(event: TngPaginationChangeEvent): void {
+  protected changePage(event: TngPaginationChangeEvent): void {
     void this.updateQuery({
       ppage: event.pageIndex || null,
       psize: event.pageSize === 10 ? null : event.pageSize,
     });
   }
 
-  protected changePlanSort(event: TngTableSortChange): void {
+  protected changeSort(event: TngTableSortChange): void {
     void this.updateQuery({
       psort:
         event.activeColumnId && event.direction ? event.activeColumnId : null,
@@ -190,60 +175,31 @@ export class ProductViewComponent {
     });
   }
 
-  protected back(): void {
-    void this.router.navigateByUrl(this.returnUrl());
-  }
-
-  protected editProduct(): void {
-    void this.router.navigate(['/app/catalogue', this.id, 'edit'], {
-      queryParams: { burl: this.returnUrl() },
-    });
-  }
-
-  protected archiveProduct(): void {
-    void this.router.navigate(['/app/catalogue', this.id, 'delete'], {
-      queryParams: { burl: this.returnUrl() },
-    });
-  }
-
-  protected reactivateProduct(): void {
-    const product = this.product();
-    if (!product) return;
-    this.catalogue
-      .updateProduct(product.id, { version: product.version, active: true })
-      .subscribe({
-        next: (updated) => this.product.set(updated),
-        error: (error: unknown) => this.error.set(catalogueMessage(error)),
-      });
-  }
-
   protected createPlan(): void {
-    void this.router.navigate(['/app/catalogue', this.id, 'plans', 'create'], {
-      queryParams: { burl: this.router.url },
-    });
+    void this.router.navigate(
+      ['/app/catalogue', this.productId, 'plans', 'create'],
+      { queryParams: { burl: this.router.url } },
+    );
   }
 
   protected viewPlan(plan: Plan): void {
-    void this.router.navigate(['/app/catalogue', this.id, 'plans', plan.id], {
-      queryParams: { burl: this.router.url },
-    });
+    void this.router.navigate(
+      ['/app/catalogue', this.productId, 'plans', plan.id],
+      { queryParams: { burl: this.router.url } },
+    );
   }
 
   protected editPlan(plan: Plan): void {
     void this.router.navigate(
-      ['/app/catalogue', this.id, 'plans', plan.id, 'edit'],
-      {
-        queryParams: { burl: this.router.url },
-      },
+      ['/app/catalogue', this.productId, 'plans', plan.id, 'edit'],
+      { queryParams: { burl: this.router.url } },
     );
   }
 
   protected archivePlan(plan: Plan): void {
     void this.router.navigate(
-      ['/app/catalogue', this.id, 'plans', plan.id, 'delete'],
-      {
-        queryParams: { burl: this.router.url },
-      },
+      ['/app/catalogue', this.productId, 'plans', plan.id, 'delete'],
+      { queryParams: { burl: this.router.url } },
     );
   }
 
@@ -270,14 +226,7 @@ export class ProductViewComponent {
     });
   }
 
-  private returnUrl(): string {
-    return catalogueReturnUrl(
-      this.route.snapshot.queryParamMap.get('burl'),
-      '/app/catalogue',
-    );
-  }
-
-  private readPlanSort(value: string | null): PlanSort {
+  private readSort(value: string | null): PlanSort {
     return value === 'slug' ||
       value === 'name' ||
       value === 'status' ||

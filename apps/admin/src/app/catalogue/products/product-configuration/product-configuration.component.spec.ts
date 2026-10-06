@@ -1,5 +1,5 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { CatalogueAdminService } from '@billmesh/api-client';
 import {
   DEFAULT_BILLING_POLICY,
@@ -7,7 +7,7 @@ import {
   type Product,
 } from '@billmesh/domain';
 import { of } from 'rxjs';
-import { ProductFormComponent } from './product-form.component';
+import { ProductConfigurationComponent } from './product-configuration.component';
 
 const metadata: BillingPolicyMetadata = {
   schema_version: 1,
@@ -65,8 +65,8 @@ const product: Product = {
   updated_at: '2026-01-01T00:00:00Z',
 };
 
-describe('ProductFormComponent billing policy', () => {
-  let fixture: ComponentFixture<ProductFormComponent>;
+describe('ProductConfigurationComponent billing policy', () => {
+  let fixture: ComponentFixture<ProductConfigurationComponent>;
   const service = {
     getProductPolicyMetadata: vi.fn(() => of(metadata)),
     createProduct: vi.fn(() => of(product)),
@@ -77,13 +77,14 @@ describe('ProductFormComponent billing policy', () => {
   beforeEach(async () => {
     Object.values(service).forEach((mock) => mock.mockClear());
     await TestBed.configureTestingModule({
-      imports: [ProductFormComponent],
+      imports: [ProductConfigurationComponent],
       providers: [
         provideRouter([]),
         { provide: CatalogueAdminService, useValue: service },
       ],
     }).compileComponents();
-    fixture = TestBed.createComponent(ProductFormComponent);
+    vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    fixture = TestBed.createComponent(ProductConfigurationComponent);
     fixture.detectChanges();
   });
 

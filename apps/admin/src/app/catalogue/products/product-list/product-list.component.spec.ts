@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 import { CatalogueAdminService } from '@billmesh/api-client';
 import { DEFAULT_BILLING_POLICY, type Product } from '@billmesh/domain';
 import { of } from 'rxjs';
-import { CatalogueComponent } from './catalogue.component';
+import { ProductListComponent } from './product-list.component';
 
 const product: Product = {
   id: 'product-1',
@@ -20,8 +20,8 @@ const product: Product = {
   updated_at: '2026-01-01T00:00:00Z',
 };
 
-describe('CatalogueComponent', () => {
-  let fixture: ComponentFixture<CatalogueComponent>;
+describe('ProductListComponent', () => {
+  let fixture: ComponentFixture<ProductListComponent>;
   const service = {
     listProducts: vi.fn(() =>
       of({ items: [product], total: 1, limit: 25, offset: 0 }),
@@ -33,13 +33,13 @@ describe('CatalogueComponent', () => {
     service.listProducts.mockClear();
     service.updateProduct.mockClear();
     await TestBed.configureTestingModule({
-      imports: [CatalogueComponent],
+      imports: [ProductListComponent],
       providers: [
         provideRouter([]),
         { provide: CatalogueAdminService, useValue: service },
       ],
     }).compileComponents();
-    fixture = TestBed.createComponent(CatalogueComponent);
+    fixture = TestBed.createComponent(ProductListComponent);
     fixture.detectChanges();
   });
 

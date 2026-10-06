@@ -1,0 +1,765 @@
+<main class="catalogue-page catalogue-page--product-form">
+  <section class="product-setup-layout" aria-labelledby="product-setup-title">
+    <div class="product-form-column">
+      <tng-card variant="outline" padding="lg">
+        @if (loading()) {
+          <p class="state" role="status">Loading product…</p>
+        } @else {
+          <form [formGroup]="form" (ngSubmit)="submit()">
+            <label>
+              <span>Slug</span>
+              <tng-input
+                tngAngularForms
+                formControlName="slug"
+                ariaLabel="Product slug"
+                autocomplete="off"
+                fullWidth
+              />
+              @if (form.controls.slug.invalid && form.controls.slug.touched) {
+                <small class="field-error"
+                  >Use lowercase letters, numbers, and single hyphens.</small
+                >
+              }
+            </label>
+            <label>
+              <span>Name</span>
+              <tng-input
+                tngAngularForms
+                formControlName="name"
+                ariaLabel="Product name"
+                autocomplete="off"
+                fullWidth
+              />
+            </label>
+            <label>
+              <span>Description</span>
+              <tng-textarea
+                ariaLabel="Product description"
+                rows="5"
+                [value]="form.controls.description.value"
+                (valueChange)="updateText(form.controls.description, $event)"
+              />
+            </label>
+            <section class="policy-panel" formGroupName="policy">
+              <header>
+                <div>
+                  <p class="eyebrow">Billing behavior</p>
+                  <h3>Product billing policy</h3>
+                  <p class="field-help">
+                    Billmesh evaluates this versioned policy for every new
+                    billing command. Existing and pending operations retain
+                    their policy snapshot.
+                  </p>
+                </div>
+                @if (product(); as item) {
+                  <span class="status active"
+                    >Policy v{{ item.billing_policy_version }}</span
+                  >
+                }
+              </header>
+
+              <fieldset class="policy-group">
+                <legend>Customer and Free eligibility</legend>
+                <div class="form-grid">
+                  <label>
+                    <span>Customer scope</span>
+                    <tng-select
+                      aria-label="Customer scope"
+                      [options]="options('customer.scope')"
+                      [value]="
+                        form.controls.policy.controls.customerScope.value
+                      "
+                      (valueChange)="
+                        updateSelect(
+                          form.controls.policy.controls.customerScope,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                  <label>
+                    <span>Free subscriptions per customer</span>
+                    <tng-input
+                      type="number"
+                      ariaLabel="Free subscriptions per customer"
+                      min="0"
+                      max="1000000"
+                      fullWidth
+                      [value]="
+                        numberInputValue(
+                          form.controls.policy.controls.freeAllowance.value
+                        )
+                      "
+                      (valueChange)="
+                        updateNumber(
+                          form.controls.policy.controls.freeAllowance,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                  <label>
+                    <span>Ownership change</span>
+                    <tng-select
+                      aria-label="Ownership change"
+                      [options]="options('customer.ownership_change')"
+                      [value]="
+                        form.controls.policy.controls.ownershipChange.value
+                      "
+                      (valueChange)="
+                        updateSelect(
+                          form.controls.policy.controls.ownershipChange,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                  <label>
+                    <span>Ownership transfer</span>
+                    <tng-select
+                      aria-label="Ownership transfer"
+                      [options]="options('customer.ownership_transfer')"
+                      [value]="
+                        form.controls.policy.controls.ownershipTransfer.value
+                      "
+                      (valueChange)="
+                        updateSelect(
+                          form.controls.policy.controls.ownershipTransfer,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                  <label>
+                    <span>Ineligible new owner</span>
+                    <tng-select
+                      aria-label="Ineligible new owner"
+                      [options]="options('customer.ineligible_owner_action')"
+                      [value]="
+                        form.controls.policy.controls.ineligibleOwnerAction
+                          .value
+                      "
+                      (valueChange)="
+                        updateSelect(
+                          form.controls.policy.controls.ineligibleOwnerAction,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                </div>
+              </fieldset>
+
+              <fieldset class="policy-group">
+                <legend>Account onboarding</legend>
+                <div class="form-grid">
+                  <label>
+                    <span>Initial plan</span>
+                    <tng-select
+                      aria-label="Initial plan"
+                      [options]="options('onboarding.initial_plan')"
+                      [value]="form.controls.policy.controls.initialPlan.value"
+                      (valueChange)="
+                        updateSelect(
+                          form.controls.policy.controls.initialPlan,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                  <label>
+                    <span>Ineligible onboarding</span>
+                    <tng-select
+                      aria-label="Ineligible onboarding"
+                      [options]="options('onboarding.ineligible_action')"
+                      [value]="
+                        form.controls.policy.controls.onboardingIneligibleAction
+                          .value
+                      "
+                      (valueChange)="
+                        updateSelect(
+                          form.controls.policy.controls
+                            .onboardingIneligibleAction,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                  <label>
+                    <span>Deletion retention</span>
+                    <tng-select
+                      aria-label="Deletion retention"
+                      [options]="options('onboarding.deletion_retention')"
+                      [value]="
+                        form.controls.policy.controls.deletionRetention.value
+                      "
+                      (valueChange)="
+                        updateSelect(
+                          form.controls.policy.controls.deletionRetention,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                  <label class="boolean-field">
+                    <tng-checkbox
+                      tngAngularForms
+                      formControlName="allowWithoutSubscription"
+                    />
+                    <span>Allow accounts without an active subscription</span>
+                  </label>
+                </div>
+              </fieldset>
+
+              <fieldset class="policy-group">
+                <legend>Catalogue and trials</legend>
+                <div class="form-grid">
+                  <label>
+                    <span>Catalogue access</span>
+                    <tng-select
+                      aria-label="Catalogue access"
+                      [options]="options('catalogue.access')"
+                      [value]="
+                        form.controls.policy.controls.catalogueAccess.value
+                      "
+                      (valueChange)="
+                        updateSelect(
+                          form.controls.policy.controls.catalogueAccess,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                  <label>
+                    <span>Presentation fields</span>
+                    <tng-input
+                      tngAngularForms
+                      formControlName="presentationFields"
+                      ariaLabel="Presentation fields"
+                      fullWidth
+                    />
+                    <small class="field-help"
+                      >Comma-separated safe fields.</small
+                    >
+                  </label>
+                  <label class="boolean-field">
+                    <tng-checkbox
+                      tngAngularForms
+                      formControlName="catalogueRequired"
+                    />
+                    <span
+                      >Require catalogue access before account creation</span
+                    >
+                  </label>
+                  <label class="boolean-field">
+                    <tng-checkbox
+                      tngAngularForms
+                      formControlName="trialEnabled"
+                    />
+                    <span>Enable trials</span>
+                  </label>
+                  @if (form.controls.policy.controls.trialEnabled.value) {
+                    <label>
+                      <span>Trial days</span>
+                      <tng-input
+                        type="number"
+                        ariaLabel="Trial days"
+                        min="1"
+                        max="3650"
+                        fullWidth
+                        [value]="
+                          numberInputValue(
+                            form.controls.policy.controls.trialDays.value
+                          )
+                        "
+                        (valueChange)="
+                          updateNumber(
+                            form.controls.policy.controls.trialDays,
+                            $event
+                          )
+                        "
+                      />
+                    </label>
+                    <label>
+                      <span>Trial conversion</span>
+                      <tng-select
+                        aria-label="Trial conversion"
+                        [options]="options('catalogue.trial_conversion')"
+                        [value]="
+                          form.controls.policy.controls.trialConversion.value
+                        "
+                        (valueChange)="
+                          updateSelect(
+                            form.controls.policy.controls.trialConversion,
+                            $event
+                          )
+                        "
+                      />
+                    </label>
+                  }
+                </div>
+              </fieldset>
+
+              <fieldset class="policy-group">
+                <legend>Subscription lifecycle</legend>
+                <div class="form-grid">
+                  <label>
+                    <span>Paid-to-Paid changes</span>
+                    <tng-select
+                      aria-label="Paid-to-Paid changes"
+                      [options]="options('lifecycle.paid_to_paid')"
+                      [value]="form.controls.policy.controls.paidToPaid.value"
+                      (valueChange)="
+                        updateSelect(
+                          form.controls.policy.controls.paidToPaid,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                  <label>
+                    <span>Cancellation default</span>
+                    <tng-select
+                      aria-label="Cancellation default"
+                      [options]="options('lifecycle.cancellation_default')"
+                      [value]="
+                        form.controls.policy.controls.cancellationDefault.value
+                      "
+                      (valueChange)="
+                        updateSelect(
+                          form.controls.policy.controls.cancellationDefault,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                  <label>
+                    <span>Immediate-cancellation refund</span>
+                    <tng-select
+                      aria-label="Immediate-cancellation refund"
+                      [options]="options('lifecycle.immediate_cancel_refund')"
+                      [value]="
+                        form.controls.policy.controls.immediateCancelRefund
+                          .value
+                      "
+                      (valueChange)="
+                        updateSelect(
+                          form.controls.policy.controls.immediateCancelRefund,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                  <label>
+                    <span>Reactivation</span>
+                    <tng-select
+                      aria-label="Reactivation"
+                      [options]="options('lifecycle.reactivation')"
+                      [value]="form.controls.policy.controls.reactivation.value"
+                      (valueChange)="
+                        updateSelect(
+                          form.controls.policy.controls.reactivation,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                  <label>
+                    <span>Over-limit downgrade</span>
+                    <tng-select
+                      aria-label="Over-limit downgrade"
+                      [options]="options('lifecycle.over_limit')"
+                      [value]="form.controls.policy.controls.overLimit.value"
+                      (valueChange)="
+                        updateSelect(
+                          form.controls.policy.controls.overLimit,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                  <label>
+                    <span>Renewal</span>
+                    <tng-select
+                      aria-label="Renewal"
+                      [options]="options('lifecycle.renewal')"
+                      [value]="form.controls.policy.controls.renewal.value"
+                      (valueChange)="
+                        updateSelect(
+                          form.controls.policy.controls.renewal,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                  <label>
+                    <span>Dunning</span>
+                    <tng-select
+                      aria-label="Dunning"
+                      [options]="options('lifecycle.dunning')"
+                      [value]="form.controls.policy.controls.dunning.value"
+                      (valueChange)="
+                        updateSelect(
+                          form.controls.policy.controls.dunning,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                  <label>
+                    <span>Grace period days</span>
+                    <tng-input
+                      type="number"
+                      ariaLabel="Grace period days"
+                      min="0"
+                      max="365"
+                      fullWidth
+                      [value]="
+                        numberInputValue(
+                          form.controls.policy.controls.gracePeriodDays.value
+                        )
+                      "
+                      (valueChange)="
+                        updateNumber(
+                          form.controls.policy.controls.gracePeriodDays,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                  <label>
+                    <span>Expiration</span>
+                    <tng-select
+                      aria-label="Expiration"
+                      [options]="options('lifecycle.expiration')"
+                      [value]="form.controls.policy.controls.expiration.value"
+                      (valueChange)="
+                        updateSelect(
+                          form.controls.policy.controls.expiration,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                  <label>
+                    <span>Refund entitlements</span>
+                    <tng-select
+                      aria-label="Refund entitlements"
+                      [options]="options('lifecycle.refund_entitlements')"
+                      [value]="
+                        form.controls.policy.controls.refundEntitlements.value
+                      "
+                      (valueChange)="
+                        updateSelect(
+                          form.controls.policy.controls.refundEntitlements,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                  <label>
+                    <span>Chargeback entitlements</span>
+                    <tng-select
+                      aria-label="Chargeback entitlements"
+                      [options]="options('lifecycle.chargeback_entitlements')"
+                      [value]="
+                        form.controls.policy.controls.chargebackEntitlements
+                          .value
+                      "
+                      (valueChange)="
+                        updateSelect(
+                          form.controls.policy.controls.chargebackEntitlements,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                  <label class="boolean-field">
+                    <tng-checkbox
+                      tngAngularForms
+                      formControlName="allowImmediateCancel"
+                    />
+                    <span>Allow immediate cancellation</span>
+                  </label>
+                  <label class="boolean-field">
+                    <tng-checkbox
+                      tngAngularForms
+                      formControlName="allowCancellationWithdraw"
+                    />
+                    <span>Allow withdrawal of scheduled cancellation</span>
+                  </label>
+                </div>
+              </fieldset>
+
+              <fieldset class="policy-group">
+                <legend>Projection and outage behavior</legend>
+                <div class="form-grid">
+                  <label>
+                    <span>Fresh snapshot seconds</span>
+                    <tng-input
+                      type="number"
+                      ariaLabel="Fresh snapshot seconds"
+                      min="0"
+                      max="2592000"
+                      fullWidth
+                      [value]="
+                        numberInputValue(
+                          form.controls.policy.controls.freshSeconds.value
+                        )
+                      "
+                      (valueChange)="
+                        updateNumber(
+                          form.controls.policy.controls.freshSeconds,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                  <label>
+                    <span>Degraded-mode seconds</span>
+                    <tng-input
+                      type="number"
+                      ariaLabel="Degraded-mode seconds"
+                      min="0"
+                      max="2592000"
+                      fullWidth
+                      [value]="
+                        numberInputValue(
+                          form.controls.policy.controls.degradedSeconds.value
+                        )
+                      "
+                      (valueChange)="
+                        updateNumber(
+                          form.controls.policy.controls.degradedSeconds,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                  <label>
+                    <span>Refresh interval seconds</span>
+                    <tng-input
+                      type="number"
+                      ariaLabel="Refresh interval seconds"
+                      min="1"
+                      max="2592000"
+                      fullWidth
+                      [value]="
+                        numberInputValue(
+                          form.controls.policy.controls.refreshSeconds.value
+                        )
+                      "
+                      (valueChange)="
+                        updateNumber(
+                          form.controls.policy.controls.refreshSeconds,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                  <label>
+                    <span>Reconciliation interval seconds</span>
+                    <tng-input
+                      type="number"
+                      ariaLabel="Reconciliation interval seconds"
+                      min="1"
+                      max="2592000"
+                      fullWidth
+                      [value]="
+                        numberInputValue(
+                          form.controls.policy.controls.reconciliationSeconds
+                            .value
+                        )
+                      "
+                      (valueChange)="
+                        updateNumber(
+                          form.controls.policy.controls.reconciliationSeconds,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                  <label class="policy-wide">
+                    <span>Fail-closed operations</span>
+                    <tng-input
+                      tngAngularForms
+                      formControlName="failClosedOperations"
+                      ariaLabel="Fail-closed operations"
+                      fullWidth
+                    />
+                    <small class="field-help"
+                      >Comma-separated operation classes.</small
+                    >
+                  </label>
+                </div>
+              </fieldset>
+
+              <fieldset class="policy-group">
+                <legend>Checkout</legend>
+                <div class="form-grid">
+                  <label>
+                    <span>Presentation</span>
+                    <tng-select
+                      aria-label="Checkout presentation"
+                      [options]="options('checkout.presentation')"
+                      [value]="
+                        form.controls.policy.controls.checkoutPresentation.value
+                      "
+                      (valueChange)="
+                        updateSelect(
+                          form.controls.policy.controls.checkoutPresentation,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                  <label>
+                    <span>Confirmation</span>
+                    <tng-select
+                      aria-label="Checkout confirmation"
+                      [options]="options('checkout.confirmation')"
+                      [value]="form.controls.policy.controls.confirmation.value"
+                      (valueChange)="
+                        updateSelect(
+                          form.controls.policy.controls.confirmation,
+                          $event
+                        )
+                      "
+                    />
+                  </label>
+                  <label class="boolean-field">
+                    <tng-checkbox
+                      tngAngularForms
+                      formControlName="recurringMandate"
+                    />
+                    <span>Require recurring mandate</span>
+                  </label>
+                  <label class="policy-wide">
+                    <span>Allowed redirect origins</span>
+                    <tng-textarea
+                      ariaLabel="Allowed redirect origins"
+                      rows="4"
+                      [value]="
+                        form.controls.policy.controls.redirectOrigins.value
+                      "
+                      (valueChange)="
+                        updateText(
+                          form.controls.policy.controls.redirectOrigins,
+                          $event
+                        )
+                      "
+                    />
+                    <small class="field-help"
+                      >One HTTPS origin per line. HTTP is allowed only for
+                      localhost.</small
+                    >
+                  </label>
+                </div>
+              </fieldset>
+
+              <section
+                class="policy-review"
+                aria-labelledby="policy-review-heading"
+              >
+                <div>
+                  <p class="eyebrow">Review</p>
+                  <h4 id="policy-review-heading">Effective configuration</h4>
+                </div>
+                <dl>
+                  <div>
+                    <dt>Customer</dt>
+                    <dd>
+                      {{ form.controls.policy.controls.customerScope.value }} ·
+                      {{ form.controls.policy.controls.freeAllowance.value }}
+                      Free
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Onboarding</dt>
+                    <dd>
+                      {{ form.controls.policy.controls.initialPlan.value }}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Catalogue</dt>
+                    <dd>
+                      {{ form.controls.policy.controls.catalogueAccess.value }}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Paid changes</dt>
+                    <dd>
+                      {{ form.controls.policy.controls.paidToPaid.value }}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Cancellation</dt>
+                    <dd>
+                      {{
+                        form.controls.policy.controls.cancellationDefault.value
+                      }}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Snapshot freshness</dt>
+                    <dd>
+                      {{ form.controls.policy.controls.freshSeconds.value }}
+                      seconds
+                    </dd>
+                  </div>
+                </dl>
+              </section>
+
+              @if (policyValidationError(); as policyError) {
+                <p class="notice notice--error" role="alert">
+                  {{ policyError }}
+                </p>
+              }
+            </section>
+            <billmesh-product-entitlements
+              [schema]="product()?.entitlement_schema || emptySchema"
+            />
+            @if (error()) {
+              <p class="notice notice--error" role="alert">{{ error() }}</p>
+            }
+            <div class="form-actions">
+              <tng-button type="button" appearance="outline" (click)="back()"
+                >Cancel</tng-button
+              >
+              <tng-button
+                type="submit"
+                appearance="solid"
+                tone="primary"
+                [disabled]="!canSave()"
+              >
+                {{ saving() ? 'Saving…' : 'Save product' }}
+              </tng-button>
+            </div>
+          </form>
+        }
+      </tng-card>
+    </div>
+
+    <aside class="product-setup-overview" aria-labelledby="product-setup-title">
+      <div class="product-setup-copy">
+        <p class="eyebrow">Product setup</p>
+        <h1 id="product-setup-title">{{ title() }}</h1>
+        <p>
+          {{
+            editMode
+              ? 'Update product details, billing behavior, and entitlements.'
+              : 'Create a billable product with its billing behavior and entitlements.'
+          }}
+        </p>
+        <tng-stepper
+          class="product-setup-stepper"
+          orientation="vertical"
+          ariaLabel="Product setup progress"
+          [ordered]="true"
+          [steps]="setupSteps()"
+          [value]="activeSetupStep()"
+        />
+      </div>
+    </aside>
+  </section>
+</main>

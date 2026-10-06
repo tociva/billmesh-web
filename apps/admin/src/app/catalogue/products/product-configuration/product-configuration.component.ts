@@ -1,5 +1,10 @@
 import { Component, ViewChild, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  ReactiveFormsModule,
+  Validators,
+  type FormControl,
+} from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CatalogueAdminService } from '@billmesh/api-client';
 import type {
@@ -11,35 +16,45 @@ import type {
 import {
   TngButtonComponent,
   TngCardComponent,
+  TngCheckboxAngularFormsAdapter,
+  TngCheckboxComponent,
   TngInputAngularFormsAdapter,
   TngInputComponent,
+  TngSelectComponent,
+  TngStepperComponent,
+  TngTextareaComponent,
 } from '@tailng-ui/components';
-import { catalogueMessage, catalogueReturnUrl } from '../catalogue.helpers';
-import { EntitlementSchemaEditorComponent } from '../entitlement-schema-editor/entitlement-schema-editor.component';
+import { catalogueMessage, catalogueReturnUrl } from '../../catalogue.helpers';
+import { ProductEntitlementsComponent } from '../product-entitlements/product-entitlements.component';
 
 @Component({
-  selector: 'billmesh-product-form',
+  selector: 'billmesh-product-configuration',
   imports: [
     ReactiveFormsModule,
     TngButtonComponent,
     TngCardComponent,
+    TngCheckboxAngularFormsAdapter,
+    TngCheckboxComponent,
     TngInputAngularFormsAdapter,
     TngInputComponent,
-    EntitlementSchemaEditorComponent,
+    TngSelectComponent,
+    TngStepperComponent,
+    TngTextareaComponent,
+    ProductEntitlementsComponent,
   ],
-  templateUrl: './product-form.component.html',
-  styleUrl: '../catalogue.shared.css',
+  templateUrl: './product-configuration.component.html',
+  styleUrl: '../../catalogue.shared.css',
 })
-export class ProductFormComponent {
-  @ViewChild(EntitlementSchemaEditorComponent)
-  private schemaEditor?: EntitlementSchemaEditorComponent;
+export class ProductConfigurationComponent {
+  @ViewChild(ProductEntitlementsComponent)
+  private productEntitlements?: ProductEntitlementsComponent;
   private readonly catalogue = inject(CatalogueAdminService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
-  protected readonly id = this.route.snapshot.paramMap.get('id');
-  protected readonly editMode = this.id !== null;
+  protected readonly productId = this.route.snapshot.paramMap.get('productId');
+  protected readonly editMode = this.productId !== null;
   protected readonly loading = signal(this.editMode);
   protected readonly saving = signal(false);
   protected readonly error = signal('');
@@ -133,7 +148,7 @@ export class ProductFormComponent {
       next: (metadata) => {
         this.policyMetadata.set(metadata);
         this.setPolicy(metadata.defaults);
-        if (this.id) this.loadProduct(this.id);
+        if (this.productId) this.loadProduct(this.productId);
         else this.loading.set(false);
       },
       error: (error: unknown) => {
@@ -144,27 +159,27 @@ export class ProductFormComponent {
   }
 
   protected submit(): void {
-    if (this.form.invalid || !this.schemaEditor?.valid) {
+    if (this.form.invalid || !this.productEntitlements?.valid) {
       this.form.markAllAsTouched();
-      this.schemaEditor?.markAllAsTouched();
+      this.productEntitlements?.markAllAsTouched();
       return;
     }
     this.saving.set(true);
     this.error.set('');
     const value = this.form.getRawValue();
-    const request = this.id
-      ? this.catalogue.updateProduct(this.id, {
+    const request = this.productId
+      ? this.catalogue.updateProduct(this.productId, {
           version: this.product()!.version,
           name: value.name.trim(),
           description: value.description.trim(),
-          entitlement_schema: this.schemaEditor.value(),
+          entitlement_schema: this.productEntitlements.value(),
           billing_policy: this.billingPolicy(),
         })
       : this.catalogue.createProduct({
           slug: value.slug.trim(),
           name: value.name.trim(),
           description: value.description.trim(),
-          entitlement_schema: this.schemaEditor.value(),
+          entitlement_schema: this.productEntitlements.value(),
           billing_policy: this.billingPolicy(),
         });
     request.subscribe({
@@ -185,15 +200,77 @@ export class ProductFormComponent {
     return (
       !this.saving() &&
       this.form.valid &&
-      Boolean(this.schemaEditor?.valid) &&
+      Boolean(this.productEntitlements?.valid) &&
       !this.policyValidationError()
     );
   }
 
+  protected setupSteps() {
+    return [
+      {
+        value: 'details',
+        label: 'Product details',
+        description: 'Slug, name & description',
+        completed:
+          this.form.controls.slug.valid &&
+          this.form.controls.name.valid &&
+          this.form.controls.description.valid,
+      },
+      {
+        value: 'policy',
+        label: 'Billing policy',
+        description: 'Eligibility, lifecycle & checkout',
+        completed:
+          this.form.controls.policy.valid && !this.policyValidationError(),
+      },
+      {
+        value: 'entitlements',
+        label: 'Entitlements',
+        description: 'Product access & limits',
+        completed: Boolean(this.productEntitlements?.valid),
+      },
+    ] as const;
+  }
+
+  protected activeSetupStep(): string {
+    return (
+      this.setupSteps().find((step) => !step.completed)?.value ?? 'entitlements'
+    );
+  }
+
+  protected updateSelect(control: FormControl<string>, value: unknown): void {
+    if (typeof value !== 'string') return;
+    control.setValue(value);
+    control.markAsDirty();
+  }
+
+  protected updateText(
+    control: FormControl<string>,
+    value: string | null,
+  ): void {
+    control.setValue(value ?? '');
+    control.markAsDirty();
+  }
+
+  protected updateNumber(
+    control: FormControl<number>,
+    value: string | null,
+  ): void {
+    const parsed = value === null || value.trim() === '' ? NaN : Number(value);
+    control.setValue(
+      Number.isFinite(parsed) ? parsed : (null as unknown as number),
+    );
+    control.markAsDirty();
+  }
+
+  protected numberInputValue(value: number | null): string {
+    return value?.toString() ?? '';
+  }
+
   protected back(): void {
     void this.router.navigateByUrl(
-      this.editMode && this.id
-        ? `/app/catalogue/${encodeURIComponent(this.id)}?burl=${encodeURIComponent(this.returnUrl())}`
+      this.editMode && this.productId
+        ? `/app/catalogue/${encodeURIComponent(this.productId)}?burl=${encodeURIComponent(this.returnUrl())}`
         : this.returnUrl(),
     );
   }
@@ -394,7 +471,9 @@ export class ProductFormComponent {
       failClosedOperations: policy.projection.fail_closed_operations.join(', '),
       refreshSeconds: policy.projection.refresh_seconds,
       reconciliationSeconds: policy.projection.reconciliation_seconds,
-      redirectOrigins: policy.checkout.allowed_redirect_origins.join('\n'),
+      redirectOrigins: (policy.checkout.allowed_redirect_origins ?? []).join(
+        '\n',
+      ),
       checkoutPresentation: policy.checkout.presentation,
       recurringMandate: policy.checkout.recurring_mandate,
       confirmation: policy.checkout.confirmation,

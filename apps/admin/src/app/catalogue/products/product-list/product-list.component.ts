@@ -27,13 +27,13 @@ import {
   catalogueMessage,
   nonNegativeInteger,
   pageSize,
-} from './catalogue.helpers';
+} from '../../catalogue.helpers';
 
 type ProductStatus = 'all' | 'active' | 'archived';
 type ProductSort = 'slug' | 'name' | 'status' | 'created_at' | 'updated_at';
 
 @Component({
-  selector: 'billmesh-admin-catalogue',
+  selector: 'billmesh-product-list',
   imports: [
     DatePipe,
     FilterPopoverComponent,
@@ -44,10 +44,10 @@ type ProductSort = 'slug' | 'name' | 'status' | 'created_at' | 'updated_at';
     TngTable,
     TngTableCellTpl,
   ],
-  templateUrl: './catalogue.component.html',
-  styleUrl: './catalogue.shared.css',
+  templateUrl: './product-list.component.html',
+  styleUrl: '../../catalogue.shared.css',
 })
-export class CatalogueComponent {
+export class ProductListComponent {
   private readonly catalogue = inject(CatalogueAdminService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);

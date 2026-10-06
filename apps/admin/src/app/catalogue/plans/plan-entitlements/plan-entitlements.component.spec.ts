@@ -1,7 +1,7 @@
 import type { EntitlementSchema } from '@billmesh/domain';
-import { EntitlementValuesComponent } from './entitlement-values.component';
+import { PlanEntitlementsComponent } from './plan-entitlements.component';
 
-describe('EntitlementValuesComponent', () => {
+describe('PlanEntitlementsComponent', () => {
   const schema: EntitlementSchema = {
     fields: [
       {
@@ -38,7 +38,7 @@ describe('EntitlementValuesComponent', () => {
   };
 
   it('builds typed entitlement values from product defaults', () => {
-    const component = new EntitlementValuesComponent();
+    const component = new PlanEntitlementsComponent();
     component.schema = schema;
     component.ngOnChanges();
 
@@ -51,7 +51,7 @@ describe('EntitlementValuesComponent', () => {
   });
 
   it('preserves values when editing a plan', () => {
-    const component = new EntitlementValuesComponent();
+    const component = new PlanEntitlementsComponent();
     component.schema = schema;
     component.entitlements = {
       reports: false,

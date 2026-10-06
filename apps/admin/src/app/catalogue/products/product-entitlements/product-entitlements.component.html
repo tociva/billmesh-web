@@ -55,10 +55,12 @@
       @if (!item) {
         <label>
           <span>Key</span>
-          <input
-            type="text"
+          <tng-input
+            tngAngularForms
             autocomplete="off"
             placeholder="workflow_execution"
+            ariaLabel="Entitlement key"
+            fullWidth
             [formControl]="control(group, 'key')"
           />
           @if (control(group, 'key').invalid && control(group, 'key').touched) {
@@ -69,31 +71,35 @@
         </label>
         <label>
           <span>Label</span>
-          <input
-            type="text"
+          <tng-input
+            tngAngularForms
             autocomplete="off"
             placeholder="Workflow execution"
+            ariaLabel="Entitlement label"
+            fullWidth
             [formControl]="control(group, 'label')"
           />
         </label>
       }
       <label>
         <span>Type</span>
-        <select
-          [formControl]="control(group, 'type')"
-          (change)="onTypeChange(group)"
-        >
-          @for (type of types; track type.value) {
-            <option [value]="type.value">{{ type.label }}</option>
-          }
-        </select>
+        <tng-select
+          aria-label="Entitlement type"
+          [options]="types"
+          [value]="control(group, 'type').value"
+          (valueChange)="
+            updateControl(control(group, 'type'), $event); onTypeChange(group)
+          "
+        />
       </label>
       @if (!item) {
         <label>
           <span>Description</span>
-          <input
-            type="text"
+          <tng-input
+            tngAngularForms
             autocomplete="off"
+            ariaLabel="Entitlement description"
+            fullWidth
             [formControl]="control(group, 'description')"
           />
         </label>
@@ -103,21 +109,21 @@
     <div class="schema-flags">
       @if (!item) {
         <label class="boolean-field"
-          ><input
-            type="checkbox"
+          ><tng-checkbox
+            tngAngularForms
             [formControl]="control(group, 'required')"
           /><span>Required</span></label
         >
       }
       <label class="boolean-field"
-        ><input
-          type="checkbox"
+        ><tng-checkbox
+          tngAngularForms
           [formControl]="control(group, 'nullable')"
         /><span>Allow null</span></label
       >
       <label class="boolean-field"
-        ><input
-          type="checkbox"
+        ><tng-checkbox
+          tngAngularForms
           [formControl]="control(group, 'defaultEnabled')"
         /><span>Set a default</span></label
       >
@@ -127,25 +133,30 @@
       <label>
         <span>Default value</span>
         @if (fieldType(group) === 'boolean') {
-          <select [formControl]="control(group, 'defaultValue')">
-            <option [ngValue]="true">Enabled</option>
-            <option [ngValue]="false">Disabled</option>
-          </select>
+          <tng-select
+            aria-label="Default value"
+            [options]="booleanOptions"
+            [value]="control(group, 'defaultValue').value"
+            (valueChange)="
+              updateControl(control(group, 'defaultValue'), $event)
+            "
+          />
         } @else if (fieldType(group) === 'select') {
-          <select [formControl]="control(group, 'defaultValue')">
-            @for (option of options(group).controls; track option) {
-              <option [value]="control(asGroup(option), 'value').value">
-                {{
-                  control(asGroup(option), 'label').value ||
-                    control(asGroup(option), 'value').value
-                }}
-              </option>
-            }
-          </select>
+          <tng-select
+            aria-label="Default value"
+            [options]="selectOptions(group)"
+            [value]="control(group, 'defaultValue').value"
+            (valueChange)="
+              updateControl(control(group, 'defaultValue'), $event)
+            "
+          />
         } @else if (
           fieldType(group) !== 'object' && fieldType(group) !== 'array'
         ) {
-          <input
+          <tng-input
+            tngAngularForms
+            ariaLabel="Default value"
+            fullWidth
             [type]="
               fieldType(group) === 'integer' || fieldType(group) === 'number'
                 ? 'number'
@@ -166,11 +177,21 @@
       <div class="form-grid">
         <label
           ><span>Minimum</span
-          ><input type="number" [formControl]="control(group, 'minimum')"
+          ><tng-input
+            tngAngularForms
+            type="number"
+            ariaLabel="Minimum"
+            fullWidth
+            [formControl]="control(group, 'minimum')"
         /></label>
         <label
           ><span>Maximum</span
-          ><input type="number" [formControl]="control(group, 'maximum')"
+          ><tng-input
+            tngAngularForms
+            type="number"
+            ariaLabel="Maximum"
+            fullWidth
+            [formControl]="control(group, 'maximum')"
         /></label>
       </div>
     }
@@ -178,18 +199,24 @@
       <div class="form-grid">
         <label
           ><span>Minimum length</span
-          ><input
+          ><tng-input
+            tngAngularForms
             type="number"
+            ariaLabel="Minimum length"
             min="0"
             step="1"
+            fullWidth
             [formControl]="control(group, 'minLength')"
         /></label>
         <label
           ><span>Maximum length</span
-          ><input
+          ><tng-input
+            tngAngularForms
             type="number"
+            ariaLabel="Maximum length"
             min="0"
             step="1"
+            fullWidth
             [formControl]="control(group, 'maxLength')"
         /></label>
       </div>
@@ -211,16 +238,18 @@
           let optionIndex = $index
         ) {
           <div class="option-row">
-            <input
-              type="text"
+            <tng-input
+              tngAngularForms
               placeholder="Label"
-              aria-label="Option label"
+              ariaLabel="Option label"
+              fullWidth
               [formControl]="control(asGroup(option), 'label')"
             />
-            <input
-              type="text"
+            <tng-input
+              tngAngularForms
               placeholder="value"
-              aria-label="Option value"
+              ariaLabel="Option value"
+              fullWidth
               [formControl]="control(asGroup(option), 'value')"
             />
             <tng-button
@@ -271,18 +300,24 @@
       <div class="form-grid">
         <label
           ><span>Minimum items</span
-          ><input
+          ><tng-input
+            tngAngularForms
             type="number"
+            ariaLabel="Minimum items"
             min="0"
             step="1"
+            fullWidth
             [formControl]="control(group, 'minItems')"
         /></label>
         <label
           ><span>Maximum items</span
-          ><input
+          ><tng-input
+            tngAngularForms
             type="number"
+            ariaLabel="Maximum items"
             min="0"
             step="1"
+            fullWidth
             [formControl]="control(group, 'maxItems')"
         /></label>
       </div>

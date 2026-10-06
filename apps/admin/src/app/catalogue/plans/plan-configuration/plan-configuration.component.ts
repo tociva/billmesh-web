@@ -16,12 +16,12 @@ import {
   catalogueMessage,
   catalogueReturnUrl,
   parseMinorUnits,
-} from '../catalogue.helpers';
-import { currencyOptions, type CurrencyOption } from '../currency-options';
-import { EntitlementValuesComponent } from '../entitlement-values/entitlement-values.component';
+} from '../../catalogue.helpers';
+import { currencyOptions, type CurrencyOption } from '../../currency-options';
+import { PlanEntitlementsComponent } from '../plan-entitlements/plan-entitlements.component';
 
 @Component({
-  selector: 'billmesh-plan-form',
+  selector: 'billmesh-plan-configuration',
   imports: [
     ReactiveFormsModule,
     TngAutocompleteComponent,
@@ -30,14 +30,14 @@ import { EntitlementValuesComponent } from '../entitlement-values/entitlement-va
     TngInputAngularFormsAdapter,
     TngInputComponent,
     TngSelectComponent,
-    EntitlementValuesComponent,
+    PlanEntitlementsComponent,
   ],
-  templateUrl: './plan-form.component.html',
-  styleUrl: '../catalogue.shared.css',
+  templateUrl: './plan-configuration.component.html',
+  styleUrl: '../../catalogue.shared.css',
 })
-export class PlanFormComponent {
-  @ViewChild(EntitlementValuesComponent)
-  private entitlementValues?: EntitlementValuesComponent;
+export class PlanConfigurationComponent {
+  @ViewChild(PlanEntitlementsComponent)
+  private planEntitlements?: PlanEntitlementsComponent;
   private readonly catalogue = inject(CatalogueAdminService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
@@ -128,14 +128,14 @@ export class PlanFormComponent {
   }
 
   protected submit(): void {
-    if (this.form.invalid || !this.entitlementValues?.valid) {
+    if (this.form.invalid || !this.planEntitlements?.valid) {
       this.form.markAllAsTouched();
-      this.entitlementValues?.markAllAsTouched();
+      this.planEntitlements?.markAllAsTouched();
       return;
     }
     const value = this.form.getRawValue();
     const priceMinor = parseMinorUnits(value.price);
-    const entitlements = this.entitlementValues.value();
+    const entitlements = this.planEntitlements.value();
     if (priceMinor === null) {
       this.error.set('Price must use no more than two decimal places.');
       return;
@@ -191,9 +191,7 @@ export class PlanFormComponent {
 
   protected canSave(): boolean {
     return (
-      !this.saving() &&
-      this.form.valid &&
-      Boolean(this.entitlementValues?.valid)
+      !this.saving() && this.form.valid && Boolean(this.planEntitlements?.valid)
     );
   }
 

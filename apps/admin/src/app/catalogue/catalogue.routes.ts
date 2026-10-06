@@ -5,64 +5,64 @@ export const catalogueRoutes: Routes = [
     path: '',
     pathMatch: 'full',
     loadComponent: () =>
-      import('./catalogue.component').then(
-        (module) => module.CatalogueComponent,
+      import('./products/product-list/product-list.component').then(
+        (module) => module.ProductListComponent,
       ),
   },
   {
     path: 'create',
     loadComponent: () =>
-      import('./product-form/product-form.component').then(
-        (module) => module.ProductFormComponent,
+      import('./products/product-create/product-create.component').then(
+        (module) => module.ProductCreateComponent,
       ),
   },
   {
     path: ':productId/plans/create',
     loadComponent: () =>
-      import('./plan-form/plan-form.component').then(
-        (module) => module.PlanFormComponent,
+      import('./plans/plan-create/plan-create.component').then(
+        (module) => module.PlanCreateComponent,
       ),
   },
   {
     path: ':productId/plans/:planId/edit',
     loadComponent: () =>
-      import('./plan-form/plan-form.component').then(
-        (module) => module.PlanFormComponent,
+      import('./plans/plan-edit/plan-edit.component').then(
+        (module) => module.PlanEditComponent,
       ),
   },
   {
     path: ':productId/plans/:planId/delete',
     loadComponent: () =>
-      import('./plan-delete/plan-delete.component').then(
-        (module) => module.PlanDeleteComponent,
+      import('./plans/plan-archive/plan-archive.component').then(
+        (module) => module.PlanArchiveComponent,
       ),
   },
   {
     path: ':productId/plans/:planId',
     loadComponent: () =>
-      import('./plan-view/plan-view.component').then(
-        (module) => module.PlanViewComponent,
+      import('./plans/plan-details/plan-details.component').then(
+        (module) => module.PlanDetailsComponent,
       ),
   },
   {
-    path: ':id/edit',
+    path: ':productId/edit',
     loadComponent: () =>
-      import('./product-form/product-form.component').then(
-        (module) => module.ProductFormComponent,
+      import('./products/product-edit/product-edit.component').then(
+        (module) => module.ProductEditComponent,
       ),
   },
   {
-    path: ':id/delete',
+    path: ':productId/delete',
     loadComponent: () =>
-      import('./product-delete/product-delete.component').then(
-        (module) => module.ProductDeleteComponent,
+      import('./products/product-archive/product-archive.component').then(
+        (module) => module.ProductArchiveComponent,
       ),
   },
   {
-    path: ':id',
+    path: ':productId',
     loadComponent: () =>
-      import('./product-view/product-view.component').then(
-        (module) => module.ProductViewComponent,
+      import('./products/product-details/product-details.component').then(
+        (module) => module.ProductDetailsComponent,
       ),
   },
 ];

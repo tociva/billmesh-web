@@ -89,7 +89,7 @@
           </label>
         </div>
         @if (product(); as selectedProduct) {
-          <billmesh-entitlement-values
+          <billmesh-plan-entitlements
             [schema]="selectedProduct.entitlement_schema"
             [entitlements]="plan()?.entitlements || emptyEntitlements"
           />

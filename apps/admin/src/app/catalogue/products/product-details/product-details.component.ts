@@ -1,0 +1,77 @@
+import { DatePipe } from '@angular/common';
+import { Component, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { CatalogueAdminService } from '@billmesh/api-client';
+import type { Product } from '@billmesh/domain';
+import { TngButtonComponent, TngCardComponent } from '@tailng-ui/components';
+import { catalogueMessage, catalogueReturnUrl } from '../../catalogue.helpers';
+import { PlanListComponent } from '../../plans/plan-list/plan-list.component';
+
+@Component({
+  selector: 'billmesh-product-details',
+  imports: [DatePipe, PlanListComponent, TngButtonComponent, TngCardComponent],
+  templateUrl: './product-details.component.html',
+  styleUrl: '../../catalogue.shared.css',
+})
+export class ProductDetailsComponent {
+  private readonly catalogue = inject(CatalogueAdminService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly productId = this.route.snapshot.paramMap.get('productId')!;
+
+  protected readonly product = signal<Product | null>(null);
+  protected readonly loading = signal(true);
+  protected readonly error = signal('');
+
+  constructor() {
+    this.loadProduct();
+  }
+
+  protected loadProduct(): void {
+    this.loading.set(true);
+    this.catalogue.getProduct(this.productId).subscribe({
+      next: (product) => {
+        this.product.set(product);
+        this.loading.set(false);
+      },
+      error: (error: unknown) => {
+        this.error.set(catalogueMessage(error));
+        this.loading.set(false);
+      },
+    });
+  }
+
+  protected back(): void {
+    void this.router.navigateByUrl(this.returnUrl());
+  }
+
+  protected editProduct(): void {
+    void this.router.navigate(['/app/catalogue', this.productId, 'edit'], {
+      queryParams: { burl: this.returnUrl() },
+    });
+  }
+
+  protected archiveProduct(): void {
+    void this.router.navigate(['/app/catalogue', this.productId, 'delete'], {
+      queryParams: { burl: this.returnUrl() },
+    });
+  }
+
+  protected reactivateProduct(): void {
+    const product = this.product();
+    if (!product) return;
+    this.catalogue
+      .updateProduct(product.id, { version: product.version, active: true })
+      .subscribe({
+        next: (updated) => this.product.set(updated),
+        error: (error: unknown) => this.error.set(catalogueMessage(error)),
+      });
+  }
+
+  private returnUrl(): string {
+    return catalogueReturnUrl(
+      this.route.snapshot.queryParamMap.get('burl'),
+      '/app/catalogue',
+    );
+  }
+}

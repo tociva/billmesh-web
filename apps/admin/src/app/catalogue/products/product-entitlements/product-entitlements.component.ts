@@ -12,15 +12,31 @@ import type {
   EntitlementFieldType,
   EntitlementSchema,
 } from '@billmesh/domain';
-import { TngButtonComponent } from '@tailng-ui/components';
+import {
+  TngButtonComponent,
+  TngCheckboxAngularFormsAdapter,
+  TngCheckboxComponent,
+  TngInputAngularFormsAdapter,
+  TngInputComponent,
+  TngSelectComponent,
+} from '@tailng-ui/components';
 
 @Component({
-  selector: 'billmesh-entitlement-schema-editor',
-  imports: [NgTemplateOutlet, ReactiveFormsModule, TngButtonComponent],
-  templateUrl: './entitlement-schema-editor.component.html',
-  styleUrl: '../catalogue.shared.css',
+  selector: 'billmesh-product-entitlements',
+  imports: [
+    NgTemplateOutlet,
+    ReactiveFormsModule,
+    TngButtonComponent,
+    TngCheckboxAngularFormsAdapter,
+    TngCheckboxComponent,
+    TngInputAngularFormsAdapter,
+    TngInputComponent,
+    TngSelectComponent,
+  ],
+  templateUrl: './product-entitlements.component.html',
+  styleUrl: '../../catalogue.shared.css',
 })
-export class EntitlementSchemaEditorComponent implements OnChanges {
+export class ProductEntitlementsComponent implements OnChanges {
   @Input() schema: EntitlementSchema = { fields: [] };
 
   protected fields = new UntypedFormArray([]);
@@ -36,6 +52,10 @@ export class EntitlementSchemaEditorComponent implements OnChanges {
     { value: 'object', label: 'Field group' },
     { value: 'array', label: 'Repeatable list' },
   ];
+  protected readonly booleanOptions = [
+    { value: true, label: 'Enabled' },
+    { value: false, label: 'Disabled' },
+  ] as const;
 
   ngOnChanges(): void {
     this.fields = new UntypedFormArray(
@@ -111,6 +131,24 @@ export class EntitlementSchemaEditorComponent implements OnChanges {
 
   protected options(group: UntypedFormGroup): UntypedFormArray {
     return group.controls['options'] as UntypedFormArray;
+  }
+
+  protected selectOptions(
+    group: UntypedFormGroup,
+  ): readonly { value: string; label: string }[] {
+    return this.options(group).controls.map((option) => {
+      const optionGroup = this.asGroup(option);
+      const value = String(this.control(optionGroup, 'value').value ?? '');
+      return {
+        value,
+        label: String(this.control(optionGroup, 'label').value ?? '') || value,
+      };
+    });
+  }
+
+  protected updateControl(control: UntypedFormControl, value: unknown): void {
+    control.setValue(value);
+    control.markAsDirty();
   }
 
   protected nestedFields(group: UntypedFormGroup): UntypedFormArray {

@@ -12,12 +12,12 @@ import type { EntitlementField, EntitlementSchema } from '@billmesh/domain';
 import { TngButtonComponent } from '@tailng-ui/components';
 
 @Component({
-  selector: 'billmesh-entitlement-values',
+  selector: 'billmesh-plan-entitlements',
   imports: [NgTemplateOutlet, ReactiveFormsModule, TngButtonComponent],
-  templateUrl: './entitlement-values.component.html',
-  styleUrl: '../catalogue.shared.css',
+  templateUrl: './plan-entitlements.component.html',
+  styleUrl: '../../catalogue.shared.css',
 })
-export class EntitlementValuesComponent implements OnChanges {
+export class PlanEntitlementsComponent implements OnChanges {
   @Input({ required: true }) schema: EntitlementSchema = { fields: [] };
   @Input() entitlements: Readonly<Record<string, unknown>> = {};
 

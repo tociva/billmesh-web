@@ -19,6 +19,50 @@ textarea {
   margin: 0 auto;
   padding: clamp(1rem, 3vw, 2rem);
 }
+.catalogue-page--product-form {
+  width: min(96rem, 100%);
+}
+.product-setup-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(18rem, 0.45fr);
+  gap: clamp(1.25rem, 3vw, 2.5rem);
+  overflow: visible;
+}
+.product-form-column {
+  min-width: 0;
+}
+.product-form-column tng-select,
+.product-form-column tng-textarea {
+  width: 100%;
+}
+.product-setup-overview {
+  position: sticky;
+  top: 1rem;
+  z-index: 1;
+  align-self: start;
+  min-width: 0;
+}
+.product-setup-copy {
+  min-width: 0;
+  padding: 1rem 0;
+}
+.product-setup-copy h1 {
+  max-width: 12ch;
+  margin: 0;
+  font-size: clamp(2rem, 3.5vw, 3.25rem);
+  line-height: 0.95;
+  letter-spacing: -0.06em;
+}
+.product-setup-copy > p:last-of-type {
+  max-width: 28rem;
+  margin-top: 0.75rem;
+  color: var(--tng-semantic-foreground-muted);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+.product-setup-stepper {
+  margin-top: 1rem;
+}
 .page-heading,
 .section-heading,
 .actions,
@@ -324,7 +368,8 @@ button:focus-visible {
   grid-template-columns: auto 1fr;
   font-weight: 500;
 }
-.boolean-field input {
+.boolean-field input,
+.boolean-field tng-checkbox {
   width: auto;
   flex: 0 0 auto;
 }
@@ -379,5 +424,17 @@ button:focus-visible {
   .array-item {
     align-items: stretch;
     flex-direction: column;
+  }
+}
+@media (max-width: 980px) {
+  .product-setup-layout {
+    grid-template-columns: 1fr;
+  }
+  .product-setup-overview {
+    position: static;
+    order: -1;
+  }
+  .product-setup-copy h1 {
+    max-width: 16ch;
   }
 }

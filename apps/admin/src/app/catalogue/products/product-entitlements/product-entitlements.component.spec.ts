@@ -1,7 +1,7 @@
 import type { EntitlementSchema } from '@billmesh/domain';
-import { EntitlementSchemaEditorComponent } from './entitlement-schema-editor.component';
+import { ProductEntitlementsComponent } from './product-entitlements.component';
 
-describe('EntitlementSchemaEditorComponent', () => {
+describe('ProductEntitlementsComponent', () => {
   it('round-trips an ordered recursive schema without JSON editing', () => {
     const schema: EntitlementSchema = {
       fields: [
@@ -22,7 +22,7 @@ describe('EntitlementSchemaEditorComponent', () => {
         },
       ],
     };
-    const component = new EntitlementSchemaEditorComponent();
+    const component = new ProductEntitlementsComponent();
     component.schema = schema;
     component.ngOnChanges();
 

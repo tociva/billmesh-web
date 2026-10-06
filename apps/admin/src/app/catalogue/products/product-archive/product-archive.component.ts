@@ -1,51 +1,42 @@
 import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CatalogueAdminService } from '@billmesh/api-client';
-import type { Plan } from '@billmesh/domain';
+import type { Product } from '@billmesh/domain';
 import {
   TngButtonComponent,
   TngCardComponent,
   TngCheckboxComponent,
 } from '@tailng-ui/components';
-import { catalogueMessage, catalogueReturnUrl } from '../catalogue.helpers';
+import { catalogueMessage, catalogueReturnUrl } from '../../catalogue.helpers';
 
 @Component({
-  selector: 'billmesh-plan-delete',
+  selector: 'billmesh-product-archive',
   imports: [TngButtonComponent, TngCardComponent, TngCheckboxComponent],
-  templateUrl: './plan-delete.component.html',
-  styleUrl: '../catalogue.shared.css',
+  templateUrl: './product-archive.component.html',
+  styleUrl: '../../catalogue.shared.css',
 })
-export class PlanDeleteComponent {
+export class ProductArchiveComponent {
   private readonly catalogue = inject(CatalogueAdminService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  protected readonly productId = this.route.snapshot.paramMap.get('productId')!;
-  private readonly planId = this.route.snapshot.paramMap.get('planId')!;
-  protected readonly plan = signal<Plan | null>(null);
+  private readonly productId = this.route.snapshot.paramMap.get('productId');
+
+  protected readonly product = signal<Product | null>(null);
   protected readonly loading = signal(true);
   protected readonly saving = signal(false);
   protected readonly confirmed = signal(false);
   protected readonly error = signal('');
 
   constructor() {
-    this.catalogue.getPlan(this.planId).subscribe({
-      next: (plan) => {
-        this.plan.set(plan);
-        this.loading.set(false);
-      },
-      error: (error: unknown) => {
-        this.error.set(catalogueMessage(error));
-        this.loading.set(false);
-      },
-    });
+    if (this.productId) this.load();
   }
 
   protected archive(): void {
-    const plan = this.plan();
-    if (!plan || !this.confirmed()) return;
+    const product = this.product();
+    if (!product || !this.confirmed()) return;
     this.saving.set(true);
     this.catalogue
-      .updatePlan(plan.id, { version: plan.version, active: false })
+      .updateProduct(product.id, { version: product.version, active: false })
       .subscribe({
         next: () => void this.router.navigateByUrl(this.returnUrl()),
         error: (error: unknown) => {
@@ -59,10 +50,23 @@ export class PlanDeleteComponent {
     void this.router.navigateByUrl(this.returnUrl());
   }
 
+  private load(): void {
+    this.catalogue.getProduct(this.productId!).subscribe({
+      next: (product) => {
+        this.product.set(product);
+        this.loading.set(false);
+      },
+      error: (error: unknown) => {
+        this.error.set(catalogueMessage(error));
+        this.loading.set(false);
+      },
+    });
+  }
+
   private returnUrl(): string {
     return catalogueReturnUrl(
       this.route.snapshot.queryParamMap.get('burl'),
-      `/app/catalogue/${encodeURIComponent(this.productId)}`,
+      '/app/catalogue',
     );
   }
 }

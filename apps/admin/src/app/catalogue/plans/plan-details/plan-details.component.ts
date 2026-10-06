@@ -9,15 +9,15 @@ import {
   catalogueMessage,
   catalogueReturnUrl,
   formatPlanPrice,
-} from '../catalogue.helpers';
+} from '../../catalogue.helpers';
 
 @Component({
-  selector: 'billmesh-plan-view',
+  selector: 'billmesh-plan-details',
   imports: [DatePipe, TngButtonComponent, TngCardComponent],
-  templateUrl: './plan-view.component.html',
-  styleUrl: '../catalogue.shared.css',
+  templateUrl: './plan-details.component.html',
+  styleUrl: '../../catalogue.shared.css',
 })
-export class PlanViewComponent {
+export class PlanDetailsComponent {
   private readonly catalogue = inject(CatalogueAdminService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
