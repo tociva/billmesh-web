@@ -137,20 +137,40 @@
             </div>
           </div>
           @if (item.entitlement_schema.fields.length) {
-            <div class="entitlement-summary">
-              @for (field of item.entitlement_schema.fields; track field.key) {
-                <div>
-                  <strong>{{ field.label }}</strong>
-                  <span
-                    >{{ field.key }} · {{ field.type
-                    }}{{ field.required ? ' · required' : '' }}</span
-                  >
-                  @if (field.description) {
-                    <small>{{ field.description }}</small>
+            <tng-table
+              ariaLabel="Entitlement schema fields"
+              density="comfortable"
+              [columns]="entitlementColumns"
+              [items]="item.entitlement_schema.fields"
+            >
+              <ng-template tngTableCellTemplate="label" let-row="row">
+                <div class="schema-field-name">
+                  <strong>{{ row.label || '—' }}</strong>
+                  @if (row.description) {
+                    <small>{{ row.description }}</small>
                   }
                 </div>
-              }
-            </div>
+              </ng-template>
+              <ng-template tngTableCellTemplate="key" let-row="row">
+                <code>{{ row.key || '—' }}</code>
+              </ng-template>
+              <ng-template tngTableCellTemplate="type" let-row="row">
+                {{ row.type }}
+              </ng-template>
+              <ng-template tngTableCellTemplate="required" let-row="row">
+                <span
+                  [class]="row.required ? 'status active' : 'status archived'"
+                >
+                  {{ row.required ? 'Required' : 'Optional' }}
+                </span>
+              </ng-template>
+              <ng-template tngTableCellTemplate="default" let-row="row">
+                <code>{{ entitlementDefault(row) }}</code>
+              </ng-template>
+              <ng-template tngTableCellTemplate="constraints" let-row="row">
+                {{ entitlementConstraints(row) }}
+              </ng-template>
+            </tng-table>
           } @else {
             <p class="state">This product has no entitlements.</p>
           }

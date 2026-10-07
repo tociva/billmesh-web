@@ -130,4 +130,30 @@ describe('ProductConfigurationComponent billing policy', () => {
       'Wait for the application to request a specific plan transition.',
     );
   });
+
+  it('lists create-page entitlements one per row and edits them in a dialog', () => {
+    const buttons = Array.from(
+      fixture.nativeElement.querySelectorAll('tng-button'),
+    ) as HTMLElement[];
+    buttons
+      .find((button) => button.textContent?.includes('Add entitlement'))
+      ?.click();
+    fixture.detectChanges();
+
+    const table = fixture.nativeElement.querySelector(
+      'billmesh-product-entitlements tng-table',
+    ) as HTMLElement | null;
+    expect(table).not.toBeNull();
+    expect(table?.textContent).toContain('Entitlement');
+    expect(table?.textContent).toContain('New entitlement');
+    expect(table?.querySelectorAll('tbody tr')).toHaveLength(1);
+    const dialog = fixture.nativeElement.querySelector(
+      'billmesh-product-entitlements [role="dialog"]',
+    ) as HTMLElement | null;
+    expect(dialog).not.toBeNull();
+    expect(dialog?.textContent).toContain('Create entitlement');
+    expect(
+      fixture.nativeElement.querySelector('[aria-label="Entitlement key"]'),
+    ).not.toBeNull();
+  });
 });

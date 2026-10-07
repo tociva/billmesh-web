@@ -18,21 +18,117 @@
     </p>
   }
 
-  <div class="schema-fields">
-    @for (field of fields.controls; track field; let index = $index) {
-      <ng-container
-        *ngTemplateOutlet="
-          fieldEditor;
-          context: {
-            $implicit: asGroup(field),
-            parent: fields,
-            index,
-            item: false,
+  @if (fields.length) {
+    <tng-table
+      ariaLabel="Entitlement schema fields"
+      density="comfortable"
+      [columns]="entitlementColumns"
+      [items]="fieldRows()"
+    >
+      <ng-template tngTableCellTemplate="label" let-row="row">
+        <div class="schema-field-name">
+          <strong>{{
+            control(row, 'label').value || 'New entitlement'
+          }}</strong>
+          @if (control(row, 'description').value) {
+            <small>{{ control(row, 'description').value }}</small>
           }
-        "
-      />
+        </div>
+      </ng-template>
+      <ng-template tngTableCellTemplate="key" let-row="row">
+        <code>{{ control(row, 'key').value || '—' }}</code>
+      </ng-template>
+      <ng-template tngTableCellTemplate="type" let-row="row">
+        {{ typeLabel(row) }}
+      </ng-template>
+      <ng-template tngTableCellTemplate="required" let-row="row">
+        <span
+          [class]="
+            control(row, 'required').value ? 'status active' : 'status archived'
+          "
+        >
+          {{ control(row, 'required').value ? 'Required' : 'Optional' }}
+        </span>
+      </ng-template>
+      <ng-template tngTableCellTemplate="default" let-row="row">
+        <code>{{ defaultSummary(row) }}</code>
+      </ng-template>
+      <ng-template tngTableCellTemplate="constraints" let-row="row">
+        {{ constraintSummary(row) }}
+      </ng-template>
+      <ng-template
+        tngTableCellTemplate="actions"
+        let-row="row"
+        let-rowIndex="rowIndex"
+      >
+        <div class="row-actions entitlement-row-actions">
+          <tng-button
+            type="button"
+            appearance="outline"
+            size="sm"
+            (click)="editField(row)"
+            >Edit</tng-button
+          >
+          <tng-button
+            type="button"
+            appearance="outline"
+            size="sm"
+            [disabled]="rowIndex === 0"
+            (click)="moveField(fields, rowIndex, -1)"
+            >Up</tng-button
+          >
+          <tng-button
+            type="button"
+            appearance="outline"
+            size="sm"
+            [disabled]="rowIndex === fieldCount(fields) - 1"
+            (click)="moveField(fields, rowIndex, 1)"
+            >Down</tng-button
+          >
+          <tng-button
+            type="button"
+            appearance="outline"
+            size="sm"
+            tone="danger"
+            (click)="removeField(fields, rowIndex)"
+            >Remove</tng-button
+          >
+        </div>
+      </ng-template>
+    </tng-table>
+  }
+
+  <tng-dialog
+    class="entitlement-dialog"
+    description="Configure the entitlement stored on plans for this product."
+    [open]="editingField() !== null"
+    [title]="editorTitle()"
+    [closeOnBackdrop]="true"
+    [closeOnEscape]="true"
+    (openChange)="onEditorOpenChange($event)"
+  >
+    @if (editingField(); as activeField) {
+      <div class="entitlement-dialog-form">
+        <ng-container
+          *ngTemplateOutlet="
+            fieldEditor;
+            context: {
+              $implicit: activeField,
+              parent: fields,
+              index: fieldIndex(activeField),
+              item: false,
+              tableManaged: true,
+            }
+          "
+        />
+        <div class="form-actions">
+          <tng-button type="button" appearance="outline" (click)="closeEditor()"
+            >Done editing</tng-button
+          >
+        </div>
+      </div>
     }
-  </div>
+  </tng-dialog>
   @if (duplicateKeys(fields)) {
     <p class="field-error" role="alert">Entitlement keys must be unique.</p>
   }
@@ -44,6 +140,7 @@
   let-parent="parent"
   let-index="index"
   let-item="item"
+  let-tableManaged="tableManaged"
 >
   <fieldset class="schema-field">
     <legend>
@@ -336,7 +433,7 @@
       </div>
     }
 
-    @if (!item) {
+    @if (!item && !tableManaged) {
       <div class="row-actions">
         <tng-button
           type="button"

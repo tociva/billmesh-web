@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, Input, type OnChanges } from '@angular/core';
+import { Component, Input, signal, type OnChanges } from '@angular/core';
 import {
   ReactiveFormsModule,
   UntypedFormArray,
@@ -16,9 +16,13 @@ import {
   TngButtonComponent,
   TngCheckboxAngularFormsAdapter,
   TngCheckboxComponent,
+  TngDialogComponent,
   TngInputAngularFormsAdapter,
   TngInputComponent,
   TngSelectComponent,
+  TngTable,
+  TngTableCellTpl,
+  type TngTableColumn,
 } from '@tailng-ui/components';
 
 @Component({
@@ -29,9 +33,12 @@ import {
     TngButtonComponent,
     TngCheckboxAngularFormsAdapter,
     TngCheckboxComponent,
+    TngDialogComponent,
     TngInputAngularFormsAdapter,
     TngInputComponent,
     TngSelectComponent,
+    TngTable,
+    TngTableCellTpl,
   ],
   templateUrl: './product-entitlements.component.html',
   styleUrl: '../../catalogue.shared.css',
@@ -40,6 +47,23 @@ export class ProductEntitlementsComponent implements OnChanges {
   @Input() schema: EntitlementSchema = { fields: [] };
 
   protected fields = new UntypedFormArray([]);
+  protected readonly editingField = signal<UntypedFormGroup | null>(null);
+  protected readonly entitlementColumns: readonly TngTableColumn<UntypedFormGroup>[] =
+    [
+      { id: 'label', label: 'Entitlement', width: '16rem' },
+      { id: 'key', label: 'Key', width: '13rem' },
+      { id: 'type', label: 'Type', width: '8rem' },
+      { id: 'required', label: 'Requirement', width: '8rem' },
+      { id: 'default', label: 'Default', width: '10rem' },
+      { id: 'constraints', label: 'Constraints' },
+      {
+        id: 'actions',
+        label: 'Actions',
+        align: 'end',
+        headerAlign: 'end',
+        width: '17rem',
+      },
+    ];
   protected readonly types: readonly {
     value: EntitlementFieldType;
     label: string;
@@ -61,6 +85,7 @@ export class ProductEntitlementsComponent implements OnChanges {
     this.fields = new UntypedFormArray(
       this.schema.fields.map((field) => this.createField(field, false)),
     );
+    this.editingField.set(null);
   }
 
   get valid(): boolean {
@@ -101,12 +126,87 @@ export class ProductEntitlementsComponent implements OnChanges {
     return this.control(group, 'type').value as EntitlementFieldType;
   }
 
+  protected fieldRows(): readonly UntypedFormGroup[] {
+    return this.fields.controls.map((field) => this.asGroup(field));
+  }
+
+  protected editField(group: UntypedFormGroup): void {
+    this.editingField.set(group);
+  }
+
+  protected closeEditor(): void {
+    this.editingField.set(null);
+  }
+
+  protected onEditorOpenChange(open: boolean): void {
+    if (!open) this.closeEditor();
+  }
+
+  protected editorTitle(): string {
+    const field = this.editingField();
+    if (!field) return 'Entitlement';
+    const label = String(this.control(field, 'label').value ?? '').trim();
+    return label ? `Edit ${label}` : 'Create entitlement';
+  }
+
+  protected fieldIndex(group: UntypedFormGroup): number {
+    return this.fields.controls.indexOf(group);
+  }
+
+  protected typeLabel(group: UntypedFormGroup): string {
+    const type = this.fieldType(group);
+    return this.types.find((option) => option.value === type)?.label ?? type;
+  }
+
+  protected defaultSummary(group: UntypedFormGroup): string {
+    if (!this.control(group, 'defaultEnabled').value) return '—';
+    const value = this.control(group, 'defaultValue').value;
+    if (typeof value === 'string') return value || 'Empty string';
+    return JSON.stringify(value) ?? '—';
+  }
+
+  protected constraintSummary(group: UntypedFormGroup): string {
+    const constraints: string[] = [];
+    const add = (label: string, value: unknown): void => {
+      if (value !== undefined && value !== null && value !== '')
+        constraints.push(`${label} ${value}`);
+    };
+    if (this.control(group, 'nullable').value) constraints.push('nullable');
+    const type = this.fieldType(group);
+    if (type === 'integer' || type === 'number') {
+      add('min', this.control(group, 'minimum').value);
+      add('max', this.control(group, 'maximum').value);
+    }
+    if (type === 'string') {
+      add('min length', this.control(group, 'minLength').value);
+      add('max length', this.control(group, 'maxLength').value);
+    }
+    if (type === 'select') {
+      constraints.push(`${this.options(group).length} options`);
+    }
+    if (type === 'object') {
+      constraints.push(`${this.nestedFields(group).length} nested fields`);
+    }
+    if (type === 'array') {
+      add('min items', this.control(group, 'minItems').value);
+      add('max items', this.control(group, 'maxItems').value);
+      constraints.push(`items: ${this.fieldType(this.item(group))}`);
+    }
+    return constraints.join(' · ') || '—';
+  }
+
   protected addField(target: UntypedFormArray = this.fields): void {
-    target.push(this.createField(undefined, false));
+    const field = this.createField(undefined, false);
+    target.push(field);
+    if (target === this.fields) this.editingField.set(field);
   }
 
   protected removeField(target: UntypedFormArray, index: number): void {
+    const field = target.at(index);
     target.removeAt(index);
+    if (target === this.fields && this.editingField() === field) {
+      this.editingField.set(null);
+    }
   }
 
   protected moveField(
