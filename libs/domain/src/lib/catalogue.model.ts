@@ -248,6 +248,74 @@ export interface PlanUpdate {
   readonly active?: boolean;
 }
 
+export interface CatalogueTransferCreditPack {
+  readonly slug: string;
+  readonly name: string;
+  readonly credits: number;
+  readonly price_minor: number;
+  readonly currency: string;
+  readonly validity_days: number | null;
+  readonly active: boolean;
+}
+
+export interface CatalogueTransferPlan {
+  readonly slug: string;
+  readonly plan_family_id: string;
+  readonly name: string;
+  readonly description: string;
+  readonly price_minor: number;
+  readonly currency: string;
+  readonly included_credits: number;
+  readonly entitlements: Readonly<Record<string, unknown>>;
+  readonly billing_interval: 'monthly' | 'annual';
+  readonly billing_model: 'free' | 'paid';
+  readonly selectable: boolean;
+  readonly default_for_product: boolean;
+  readonly checkout_enabled: boolean;
+  readonly effective_from?: string;
+  readonly effective_to?: string | null;
+  readonly active: boolean;
+}
+
+export interface CatalogueTransferProduct {
+  readonly slug: string;
+  readonly name: string;
+  readonly description: string;
+  readonly entitlement_schema: EntitlementSchema;
+  readonly billing_policy: BillingPolicy;
+  readonly active: boolean;
+  readonly plans: readonly CatalogueTransferPlan[];
+  readonly credit_packs: readonly CatalogueTransferCreditPack[];
+}
+
+export interface CatalogueTransfer {
+  readonly schema_version: 1 | 2;
+  readonly exported_at: string;
+  readonly products: readonly CatalogueTransferProduct[];
+}
+
+export interface CatalogueTransferIssue {
+  readonly path: string;
+  readonly code: string;
+  readonly message: string;
+}
+
+export interface CatalogueTransferValidation {
+  readonly valid: boolean;
+  readonly schema_version: number;
+  readonly products: number;
+  readonly plans: number;
+  readonly credit_packs: number;
+  readonly issues: readonly CatalogueTransferIssue[];
+}
+
+export interface CatalogueTransferImportResult {
+  readonly schema_version: 2;
+  readonly products: number;
+  readonly plans: number;
+  readonly credit_packs: number;
+}
+
 export interface PageResult<T> {
   readonly items: readonly T[];
   readonly total: number;

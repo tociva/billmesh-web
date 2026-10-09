@@ -56,9 +56,10 @@ describe('catalogue JSON transfer', () => {
       new Date('2026-10-06T00:00:00Z'),
     );
 
-    expect(transfer.schema_version).toBe(1);
+    expect(transfer.schema_version).toBe(2);
     expect(transfer.exported_at).toBe('2026-10-06T00:00:00.000Z');
     expect(catalogueTransferPlanCount(transfer)).toBe(1);
+    expect(transfer.products[0]?.credit_packs).toEqual([]);
     expect(transfer.products[0]).toMatchObject({
       slug: 'invoice-api',
       active: true,
@@ -84,6 +85,24 @@ describe('catalogue JSON transfer', () => {
     const parsed = parseCatalogueTransfer(JSON.stringify(exported));
 
     expect(parsed).toEqual(exported);
+  });
+
+  it('normalizes schema v1 files without credit packs', () => {
+    const exported = buildCatalogueTransfer([{ product, plans: [plan] }]);
+    const legacy = {
+      ...exported,
+      schema_version: 1,
+      products: exported.products.map((item) =>
+        Object.fromEntries(
+          Object.entries(item).filter(([key]) => key !== 'credit_packs'),
+        ),
+      ),
+    };
+
+    const parsed = parseCatalogueTransfer(JSON.stringify(legacy));
+
+    expect(parsed.schema_version).toBe(1);
+    expect(parsed.products[0]?.credit_packs).toEqual([]);
   });
 
   it('rejects malformed files and duplicate slugs before import starts', () => {

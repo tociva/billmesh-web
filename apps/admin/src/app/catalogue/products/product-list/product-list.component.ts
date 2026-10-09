@@ -4,7 +4,7 @@ import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CatalogueAdminService } from '@billmesh/api-client';
-import type { Plan, Product } from '@billmesh/domain';
+import type { Product } from '@billmesh/domain';
 import {
   FilterPopoverComponent,
   type FilterPopoverField,
@@ -34,7 +34,7 @@ import {
   pageSize,
 } from '../../catalogue.helpers';
 import {
-  buildCatalogueTransfer,
+  catalogueTransferCreditPackCount,
   catalogueTransferPlanCount,
   parseCatalogueTransfer,
   type CatalogueTransfer,
@@ -241,22 +241,19 @@ export class ProductListComponent {
     return catalogueTransferPlanCount(transfer);
   }
 
+  protected importCreditPackCount(transfer: CatalogueTransfer): number {
+    return catalogueTransferCreditPackCount(transfer);
+  }
+
   protected async exportCatalogue(): Promise<void> {
     this.exporting.set(true);
     this.transferError.set('');
     this.transferSuccess.set('');
     try {
-      const products = await this.listAllProducts();
-      const records = await Promise.all(
-        products.map(async (product) => ({
-          product,
-          plans: await this.listAllPlans(product.id),
-        })),
-      );
-      const transfer = buildCatalogueTransfer(records);
+      const transfer = await firstValueFrom(this.catalogue.exportCatalogue());
       this.downloadTransfer(transfer);
       this.transferSuccess.set(
-        `Exported ${transfer.products.length} product${transfer.products.length === 1 ? '' : 's'} and ${catalogueTransferPlanCount(transfer)} plan${catalogueTransferPlanCount(transfer) === 1 ? '' : 's'}.`,
+        `Exported ${transfer.products.length} product${transfer.products.length === 1 ? '' : 's'}, ${catalogueTransferPlanCount(transfer)} plan${catalogueTransferPlanCount(transfer) === 1 ? '' : 's'}, and ${catalogueTransferCreditPackCount(transfer)} credit pack${catalogueTransferCreditPackCount(transfer) === 1 ? '' : 's'}.`,
       );
     } catch (error: unknown) {
       this.transferError.set(this.transferMessage(error));
@@ -272,65 +269,19 @@ export class ProductListComponent {
     this.importing.set(true);
     this.transferError.set('');
     this.transferSuccess.set('');
-    let createdProducts = 0;
-    let createdPlans = 0;
     try {
-      const existing = await this.listAllProducts();
-      const existingSlugs = new Set(existing.map((product) => product.slug));
-      const conflicts = selected.transfer.products
-        .map((product) => product.slug)
-        .filter((slug) => existingSlugs.has(slug));
-      if (conflicts.length) {
-        throw new Error(
-          `Import stopped because these product slugs already exist: ${conflicts.join(', ')}.`,
-        );
-      }
-
-      for (const product of selected.transfer.products) {
-        const created = await firstValueFrom(
-          this.catalogue.createProduct({
-            slug: product.slug,
-            name: product.name,
-            description: product.description,
-            entitlement_schema: product.entitlement_schema,
-            billing_policy: product.billing_policy,
-          }),
-        );
-        createdProducts += 1;
-
-        for (const plan of product.plans) {
-          await firstValueFrom(
-            this.catalogue.createPlan(created.id, {
-              ...plan,
-              entitlement_schema_version: created.entitlement_schema_version,
-            }),
-          );
-          createdPlans += 1;
-        }
-
-        if (!product.active) {
-          await firstValueFrom(
-            this.catalogue.updateProduct(created.id, {
-              version: created.version,
-              active: false,
-            }),
-          );
-        }
-      }
+      const imported = await firstValueFrom(
+        this.catalogue.importCatalogue(selected.transfer),
+      );
 
       this.selectedImport.set(null);
       this.importOpen.set(false);
       this.transferSuccess.set(
-        `Imported ${createdProducts} product${createdProducts === 1 ? '' : 's'} and ${createdPlans} plan${createdPlans === 1 ? '' : 's'}.`,
+        `Imported ${imported.products} product${imported.products === 1 ? '' : 's'}, ${imported.plans} plan${imported.plans === 1 ? '' : 's'}, and ${imported.credit_packs} credit pack${imported.credit_packs === 1 ? '' : 's'}.`,
       );
       this.loadProducts();
     } catch (error: unknown) {
-      const partial =
-        createdProducts > 0
-          ? ` ${createdProducts} product${createdProducts === 1 ? '' : 's'} and ${createdPlans} plan${createdPlans === 1 ? '' : 's'} were created before the import stopped.`
-          : '';
-      this.transferError.set(`${this.transferMessage(error)}${partial}`);
-      if (createdProducts > 0) this.loadProducts();
+      this.transferError.set(this.transferMessage(error));
     } finally {
       this.importing.set(false);
     }
@@ -391,55 +342,24 @@ export class ProductListComponent {
       return;
     }
     try {
+      const transfer = parseCatalogueTransfer(await file.text());
+      const validation = await firstValueFrom(
+        this.catalogue.validateCatalogueImport(transfer),
+      );
+      if (!validation.valid) {
+        throw new Error(
+          validation.issues
+            .map((issue) => `${issue.path}: ${issue.message}`)
+            .join(' '),
+        );
+      }
       this.selectedImport.set({
         fileName: file.name,
-        transfer: parseCatalogueTransfer(await file.text()),
+        transfer,
       });
     } catch (error: unknown) {
       this.transferError.set(this.transferMessage(error));
     }
-  }
-
-  private async listAllProducts(): Promise<readonly Product[]> {
-    const items: Product[] = [];
-    let total = 1;
-    while (items.length < total) {
-      const page = await firstValueFrom(
-        this.catalogue.listProducts({
-          status: 'all',
-          query: '',
-          limit: 200,
-          offset: items.length,
-          sort: 'slug',
-          direction: 'asc',
-        }),
-      );
-      items.push(...page.items);
-      total = page.total;
-      if (page.items.length === 0) break;
-    }
-    return items;
-  }
-
-  private async listAllPlans(productId: string): Promise<readonly Plan[]> {
-    const items: Plan[] = [];
-    let total = 1;
-    while (items.length < total) {
-      const page = await firstValueFrom(
-        this.catalogue.listPlans(productId, {
-          status: 'all',
-          query: '',
-          limit: 200,
-          offset: items.length,
-          sort: 'slug',
-          direction: 'asc',
-        }),
-      );
-      items.push(...page.items);
-      total = page.total;
-      if (page.items.length === 0) break;
-    }
-    return items;
   }
 
   private downloadTransfer(transfer: CatalogueTransfer): void {
@@ -454,9 +374,39 @@ export class ProductListComponent {
   }
 
   private transferMessage(error: unknown): string {
+    if (
+      error instanceof HttpErrorResponse &&
+      this.isTransferIssueResponse(error.error)
+    ) {
+      return error.error.issues
+        .map((issue) => `${issue.path}: ${issue.message}`)
+        .join(' ');
+    }
     return error instanceof Error && !(error instanceof HttpErrorResponse)
       ? error.message
       : catalogueMessage(error);
+  }
+
+  private isTransferIssueResponse(
+    value: unknown,
+  ): value is {
+    readonly issues: readonly {
+      readonly path: string;
+      readonly message: string;
+    }[];
+  } {
+    if (typeof value !== 'object' || value === null) return false;
+    const issues = (value as { issues?: unknown }).issues;
+    return (
+      Array.isArray(issues) &&
+      issues.every(
+        (issue) =>
+          typeof issue === 'object' &&
+          issue !== null &&
+          typeof (issue as { path?: unknown }).path === 'string' &&
+          typeof (issue as { message?: unknown }).message === 'string',
+      )
+    );
   }
 
   private readSort(value: string | null): ProductSort {

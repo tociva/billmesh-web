@@ -11,6 +11,10 @@ import {
   type BrowserSession,
 } from '@billmesh/auth';
 import { AppConfigStore, type AppConfig } from '@billmesh/config';
+import {
+  DEFAULT_BILLING_POLICY,
+  type CatalogueTransfer,
+} from '@billmesh/domain';
 
 const config: AppConfig = {
   apiBaseUrl: 'https://api-local.billme.sh/api/v1',
@@ -157,5 +161,65 @@ describe('CatalogueAdminService', () => {
     expect(update.request.body.plan_family_id).toBe('professional');
     expect(update.request.headers.get('X-CSRF-Token')).toBe('admin-csrf');
     update.flush({});
+  });
+
+  it('exports, validates, and atomically imports catalogue transfers', () => {
+    const transfer: CatalogueTransfer = {
+      schema_version: 2,
+      exported_at: '2026-10-09T00:00:00.000Z',
+      products: [
+        {
+          slug: 'daybook',
+          name: 'Daybook',
+          description: 'Daybook catalogue',
+          entitlement_schema: { fields: [] },
+          billing_policy: DEFAULT_BILLING_POLICY,
+          active: true,
+          plans: [],
+          credit_packs: [],
+        },
+      ],
+    };
+
+    catalogue.exportCatalogue().subscribe();
+    const exportRequest = requests.expectOne(
+      'https://api-local.billme.sh/api/v1/admin/catalogue/export',
+    );
+    expect(exportRequest.request.method).toBe('GET');
+    exportRequest.flush(transfer);
+
+    catalogue.validateCatalogueImport(transfer).subscribe();
+    const validateRequest = requests.expectOne(
+      'https://api-local.billme.sh/api/v1/admin/catalogue/import/validate',
+    );
+    expect(validateRequest.request.method).toBe('POST');
+    expect(validateRequest.request.body).toEqual(transfer);
+    expect(validateRequest.request.headers.get('X-CSRF-Token')).toBe(
+      'admin-csrf',
+    );
+    validateRequest.flush({
+      valid: true,
+      schema_version: 2,
+      products: 1,
+      plans: 0,
+      credit_packs: 0,
+      issues: [],
+    });
+
+    catalogue.importCatalogue(transfer).subscribe();
+    const importRequest = requests.expectOne(
+      'https://api-local.billme.sh/api/v1/admin/catalogue/import',
+    );
+    expect(importRequest.request.method).toBe('POST');
+    expect(importRequest.request.body).toEqual(transfer);
+    expect(importRequest.request.headers.get('X-CSRF-Token')).toBe(
+      'admin-csrf',
+    );
+    importRequest.flush({
+      schema_version: 2,
+      products: 1,
+      plans: 0,
+      credit_packs: 0,
+    });
   });
 });

@@ -79,8 +79,9 @@
             <p class="eyebrow">Portable catalogue</p>
             <h3 id="import-heading">Import catalogue JSON</h3>
             <p>
-              Import creates new products and their plans. Existing product
-              slugs are rejected and never overwritten.
+              Import validates products, plans, and credit packs before creating
+              them in one transaction. Existing product slugs are rejected and
+              never overwritten.
             </p>
           </div>
           <tng-button
@@ -120,7 +121,8 @@
               <strong>{{ selected.fileName }}</strong>
               <span>
                 {{ selected.transfer.products.length }} product(s) ·
-                {{ importPlanCount(selected.transfer) }} plan(s)
+                {{ importPlanCount(selected.transfer) }} plan(s) ·
+                {{ importCreditPackCount(selected.transfer) }} credit pack(s)
               </span>
             </div>
             <div class="actions">

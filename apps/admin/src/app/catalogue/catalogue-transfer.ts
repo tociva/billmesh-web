@@ -1,50 +1,27 @@
 import type {
   BillingPolicy,
+  CatalogueTransfer,
+  CatalogueTransferCreditPack,
+  CatalogueTransferPlan,
+  CatalogueTransferProduct,
   EntitlementSchema,
   Plan,
   Product,
 } from '@billmesh/domain';
 
-export const CATALOGUE_TRANSFER_SCHEMA_VERSION = 1 as const;
+export type {
+  CatalogueTransfer,
+  CatalogueTransferCreditPack,
+  CatalogueTransferPlan,
+  CatalogueTransferProduct,
+} from '@billmesh/domain';
 
-export interface CatalogueTransferPlan {
-  readonly slug: string;
-  readonly plan_family_id: string;
-  readonly name: string;
-  readonly description: string;
-  readonly price_minor: number;
-  readonly currency: string;
-  readonly included_credits: number;
-  readonly entitlements: Readonly<Record<string, unknown>>;
-  readonly billing_interval: 'monthly' | 'annual';
-  readonly billing_model: 'free' | 'paid';
-  readonly selectable: boolean;
-  readonly default_for_product: boolean;
-  readonly checkout_enabled: boolean;
-  readonly effective_from?: string;
-  readonly effective_to?: string | null;
-  readonly active: boolean;
-}
-
-export interface CatalogueTransferProduct {
-  readonly slug: string;
-  readonly name: string;
-  readonly description: string;
-  readonly entitlement_schema: EntitlementSchema;
-  readonly billing_policy: BillingPolicy;
-  readonly active: boolean;
-  readonly plans: readonly CatalogueTransferPlan[];
-}
-
-export interface CatalogueTransfer {
-  readonly schema_version: typeof CATALOGUE_TRANSFER_SCHEMA_VERSION;
-  readonly exported_at: string;
-  readonly products: readonly CatalogueTransferProduct[];
-}
+export const CATALOGUE_TRANSFER_SCHEMA_VERSION = 2 as const;
 
 export interface CatalogueProductWithPlans {
   readonly product: Product;
   readonly plans: readonly Plan[];
+  readonly creditPacks?: readonly CatalogueTransferCreditPack[];
 }
 
 export function buildCatalogueTransfer(
@@ -54,13 +31,14 @@ export function buildCatalogueTransfer(
   return {
     schema_version: CATALOGUE_TRANSFER_SCHEMA_VERSION,
     exported_at: exportedAt.toISOString(),
-    products: records.map(({ product, plans }) => ({
+    products: records.map(({ product, plans, creditPacks = [] }) => ({
       slug: product.slug,
       name: product.name,
       description: product.description,
       entitlement_schema: product.entitlement_schema,
       billing_policy: product.billing_policy,
       active: product.active,
+      credit_packs: creditPacks,
       plans: plans.map((plan) => {
         const selectable = plan.selectable ?? true;
         return {
@@ -101,9 +79,9 @@ export function parseCatalogueTransfer(text: string): CatalogueTransfer {
   }
 
   const root = record(value, 'The catalogue file');
-  if (root['schema_version'] !== CATALOGUE_TRANSFER_SCHEMA_VERSION) {
+  if (root['schema_version'] !== 1 && root['schema_version'] !== 2) {
     throw new Error(
-      `Unsupported catalogue schema version. Expected ${CATALOGUE_TRANSFER_SCHEMA_VERSION}.`,
+      `Unsupported catalogue schema version. Expected 1 or ${CATALOGUE_TRANSFER_SCHEMA_VERSION}.`,
     );
   }
   if (!Array.isArray(root['products'])) {
@@ -135,6 +113,12 @@ export function parseCatalogueTransfer(text: string): CatalogueTransfer {
     );
     if (!Array.isArray(product['plans'])) {
       throw new Error(`${path}.plans must be an array.`);
+    }
+    if (
+      product['credit_packs'] !== undefined &&
+      !Array.isArray(product['credit_packs'])
+    ) {
+      throw new Error(`${path}.credit_packs must be an array.`);
     }
 
     const planSlugs = new Set<string>();
@@ -226,6 +210,41 @@ export function parseCatalogueTransfer(text: string): CatalogueTransfer {
       throw new Error(`Archived product "${slug}" contains an active plan.`);
     }
 
+    const creditPackSlugs = new Set<string>();
+    const creditPacks = (product['credit_packs'] ?? []).map(
+      (packValue, packIndex) => {
+        const packPath = `${path}.credit_packs[${packIndex}]`;
+        const pack = record(packValue, packPath);
+        const packSlug = requiredString(pack, 'slug', packPath);
+        if (creditPackSlugs.has(packSlug)) {
+          throw new Error(
+            `Duplicate credit pack slug "${packSlug}" for product "${slug}".`,
+          );
+        }
+        creditPackSlugs.add(packSlug);
+        const validityDays = pack['validity_days'];
+        if (
+          validityDays !== null &&
+          (typeof validityDays !== 'number' ||
+            !Number.isInteger(validityDays) ||
+            validityDays <= 0)
+        ) {
+          throw new Error(
+            `${packPath}.validity_days must be null or a positive integer.`,
+          );
+        }
+        return {
+          slug: packSlug,
+          name: requiredString(pack, 'name', packPath),
+          credits: positiveInteger(pack, 'credits', packPath),
+          price_minor: nonNegativeInteger(pack, 'price_minor', packPath),
+          currency: requiredString(pack, 'currency', packPath),
+          validity_days: validityDays,
+          active: booleanValue(pack, 'active', packPath),
+        } satisfies CatalogueTransferCreditPack;
+      },
+    );
+
     return {
       slug,
       name: requiredString(product, 'name', path),
@@ -234,11 +253,12 @@ export function parseCatalogueTransfer(text: string): CatalogueTransfer {
       billing_policy: billingPolicy as unknown as BillingPolicy,
       active,
       plans,
+      credit_packs: creditPacks,
     } satisfies CatalogueTransferProduct;
   });
 
   return {
-    schema_version: CATALOGUE_TRANSFER_SCHEMA_VERSION,
+    schema_version: root['schema_version'] as 1 | 2,
     exported_at:
       optionalString(root, 'exported_at', 'The catalogue file') ??
       new Date(0).toISOString(),
@@ -251,6 +271,15 @@ export function catalogueTransferPlanCount(
 ): number {
   return transfer.products.reduce(
     (total, product) => total + product.plans.length,
+    0,
+  );
+}
+
+export function catalogueTransferCreditPackCount(
+  transfer: CatalogueTransfer,
+): number {
+  return transfer.products.reduce(
+    (total, product) => total + product.credit_packs.length,
     0,
   );
 }
@@ -307,4 +336,16 @@ function nonNegativeInteger(
     throw new Error(`${path}.${key} must be a non-negative integer.`);
   }
   return Number(result);
+}
+
+function positiveInteger(
+  value: Record<string, unknown>,
+  key: string,
+  path: string,
+): number {
+  const result = nonNegativeInteger(value, key, path);
+  if (result === 0) {
+    throw new Error(`${path}.${key} must be a positive integer.`);
+  }
+  return result;
 }

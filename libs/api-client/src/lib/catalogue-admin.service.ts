@@ -1,6 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import type {
   BillingPolicyMetadata,
+  CatalogueTransfer,
+  CatalogueTransferImportResult,
+  CatalogueTransferValidation,
   Plan,
   PlanCreate,
   PlanUpdate,
@@ -48,6 +51,28 @@ export class CatalogueAdminService {
   getProductPolicyMetadata(): Observable<BillingPolicyMetadata> {
     return this.api.get<BillingPolicyMetadata>(
       '/admin/product-policy-metadata',
+    );
+  }
+
+  exportCatalogue(): Observable<CatalogueTransfer> {
+    return this.api.get<CatalogueTransfer>('/admin/catalogue/export');
+  }
+
+  validateCatalogueImport(
+    input: CatalogueTransfer,
+  ): Observable<CatalogueTransferValidation> {
+    return this.api.post<CatalogueTransferValidation, CatalogueTransfer>(
+      '/admin/catalogue/import/validate',
+      input,
+    );
+  }
+
+  importCatalogue(
+    input: CatalogueTransfer,
+  ): Observable<CatalogueTransferImportResult> {
+    return this.api.post<CatalogueTransferImportResult, CatalogueTransfer>(
+      '/admin/catalogue/import',
+      input,
     );
   }
 
