@@ -1,5 +1,5 @@
 import type { Routes } from '@angular/router';
-import { authenticatedGuard, permissionGuard } from '@billmesh/auth';
+import { authenticatedGuard } from '@billmesh/auth';
 import { StatusPageComponent } from '@billmesh/ui';
 
 export const routes: Routes = [
@@ -13,7 +13,7 @@ export const routes: Routes = [
   },
   {
     path: 'app',
-    canActivate: [authenticatedGuard, permissionGuard('billing:admin')],
+    canActivate: [authenticatedGuard],
     loadComponent: () =>
       import('./admin-shell/admin-shell.component').then(
         (module) => module.AdminShellComponent,
@@ -56,14 +56,6 @@ export const routes: Routes = [
     data: {
       title: 'Signed out',
       message: 'Your Billmesh Admin browser session has ended.',
-    },
-    component: StatusPageComponent,
-  },
-  {
-    path: 'forbidden',
-    data: {
-      title: 'Admin access denied',
-      message: 'Your account does not have billing:admin permission.',
     },
     component: StatusPageComponent,
   },

@@ -26,7 +26,6 @@ describe('AdminShellComponent', () => {
         {
           provide: AuthStore,
           useValue: {
-            can: (permission: string) => permission === 'billing:admin',
             currentUser: signal({
               email: 'operator@billme.sh',
               name: 'Avery Operator',
@@ -52,6 +51,7 @@ describe('AdminShellComponent', () => {
     expect(compiled.textContent).toContain('Catalogue');
     expect(compiled.textContent).toContain('Settings');
     expect(compiled.textContent).toContain('Avery Operator');
+    expect(compiled.textContent).toContain('Administrator');
   });
 
   it('links the sidebar credit to Tociva', () => {

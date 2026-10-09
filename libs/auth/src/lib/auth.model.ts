@@ -15,7 +15,7 @@ export interface BrowserSession {
   context: BrowserSessionContext;
   csrfToken: string;
   expiresAt: string;
-  permissions: readonly string[];
+  permissions?: readonly string[];
   user: BrowserSessionUser;
 }
 

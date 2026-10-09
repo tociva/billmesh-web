@@ -74,9 +74,7 @@ export class AdminShellComponent {
       'Billmesh administrator',
   );
 
-  protected readonly roleLabel = computed(() =>
-    this.authStore.can('billing:admin') ? 'Administrator' : 'Billing operator',
-  );
+  protected readonly roleLabel = 'Administrator';
 
   protected readonly currentPageTitle = computed(() => {
     const path = this.currentPath();

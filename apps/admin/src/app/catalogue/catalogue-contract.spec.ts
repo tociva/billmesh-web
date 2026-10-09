@@ -22,7 +22,6 @@ const session: BrowserSession = {
   context: { application: '', environment: '', organization_id: '' },
   csrfToken: 'admin-csrf',
   expiresAt: new Date(Date.now() + 60_000).toISOString(),
-  permissions: ['billing:admin'],
   user: {
     email: 'admin@example.test',
     name: 'Admin User',

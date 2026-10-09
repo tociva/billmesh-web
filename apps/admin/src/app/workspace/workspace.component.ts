@@ -63,13 +63,7 @@ export class WorkspaceComponent {
     () => this.displayName().split(/\s+/)[0] ?? 'Administrator',
   );
 
-  protected readonly permissionCount = computed(
-    () => this.authStore.permissions().length,
-  );
-
-  protected readonly roleLabel = computed(() =>
-    this.authStore.can('billing:admin') ? 'Administrator' : 'Billing operator',
-  );
+  protected readonly roleLabel = 'Administrator';
 
   protected readonly greeting = computed(() => {
     const hour = new Date().getHours();

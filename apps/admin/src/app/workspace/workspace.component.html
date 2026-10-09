@@ -32,16 +32,16 @@
       >
       <div>
         <small>Access level</small>
-        <strong>{{ roleLabel() }}</strong>
-        <span>Permission-scoped access</span>
+        <strong>{{ roleLabel }}</strong>
+        <span>Dedicated Admin client</span>
       </div>
     </article>
     <article>
       <span class="summary-icon summary-icon--blue" aria-hidden="true">#</span>
       <div>
-        <small>Granted permissions</small>
-        <strong>{{ permissionCount() }}</strong>
-        <span>Active for this session</span>
+        <small>Authorization</small>
+        <strong>IdNest Admin</strong>
+        <span>Validated by the Billmesh BFF</span>
       </div>
     </article>
   </section>
@@ -97,7 +97,7 @@
         </div>
         <div>
           <dt>Authorization</dt>
-          <dd>{{ roleLabel() }}</dd>
+          <dd>{{ roleLabel }}</dd>
         </div>
         <div>
           <dt>Session type</dt>
@@ -106,25 +106,27 @@
       </dl>
     </article>
 
-    <article class="permissions-panel">
+    <article class="authorization-panel">
       <div class="section-heading section-heading--compact">
         <div>
           <p class="eyebrow">Authorization</p>
-          <h2>Active permissions</h2>
+          <h2>Access source</h2>
         </div>
       </div>
-
-      @if (authStore.permissions().length) {
-        <div class="permission-list" aria-label="Granted permissions">
-          @for (permission of authStore.permissions(); track permission) {
-            <code>{{ permission }}</code>
-          }
+      <dl>
+        <div>
+          <dt>Identity provider</dt>
+          <dd>IdNest</dd>
         </div>
-      } @else {
-        <p class="empty-state">
-          No explicit permissions were returned for this session.
-        </p>
-      }
+        <div>
+          <dt>Client</dt>
+          <dd>Billmesh Admin</dd>
+        </div>
+        <div>
+          <dt>Enforcement</dt>
+          <dd>Server-side BFF session</dd>
+        </div>
+      </dl>
     </article>
   </section>
 </main>

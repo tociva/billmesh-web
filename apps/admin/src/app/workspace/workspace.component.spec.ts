@@ -13,17 +13,11 @@ describe('WorkspaceComponent', () => {
         {
           provide: AuthStore,
           useValue: {
-            can: (permission: string) => permission === 'billing:admin',
             currentUser: signal({
               email: 'operator@billme.sh',
               name: 'Avery Operator',
               subject: 'user-1',
             }),
-            permissions: signal([
-              'billing:read',
-              'billing:write',
-              'billing:admin',
-            ]),
           },
         },
       ],
@@ -40,7 +34,8 @@ describe('WorkspaceComponent', () => {
     expect(text).toContain('Billing operations');
     expect(text).toContain('Accounts & subscriptions');
     expect(text).toContain('Credits & wallets');
-    expect(text).toContain('3');
     expect(text).toContain('Administrator');
+    expect(text).toContain('IdNest Admin');
+    expect(text).toContain('Dedicated Admin client');
   });
 });

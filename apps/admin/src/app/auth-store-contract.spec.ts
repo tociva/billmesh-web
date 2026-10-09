@@ -8,7 +8,7 @@ import {
 import { AppConfigStore } from '@billmesh/config';
 
 describe('Admin session authorization contract', () => {
-  it('fails closed when an older session response omits permissions', () => {
+  it('treats a verified session as authenticated without custom permissions', () => {
     TestBed.configureTestingModule({
       providers: [
         {
@@ -24,7 +24,7 @@ describe('Admin session authorization contract', () => {
 
     const sessionState = TestBed.inject(BrowserSessionStateService);
     const authStore = TestBed.inject(AuthStore);
-    const legacySession = {
+    const adminSession: BrowserSession = {
       authenticated: true,
       context: {
         application: 'daybook',
@@ -38,11 +38,11 @@ describe('Admin session authorization contract', () => {
         name: 'Admin User',
         subject: 'user-1',
       },
-    } as BrowserSession;
+    };
 
-    sessionState.set(legacySession);
+    sessionState.set(adminSession);
 
+    expect(authStore.isAuthenticated()).toBe(true);
     expect(authStore.permissions()).toEqual([]);
-    expect(authStore.can('billing:admin')).toBe(false);
   });
 });

@@ -1,15 +1,16 @@
+import { authenticatedGuard } from '@billmesh/auth';
 import { routes } from '../app.routes';
 import { catalogueRoutes } from './catalogue.routes';
 
 describe('Admin catalogue route', () => {
-  it('ADMUI-012 requires authentication and billing:admin guards', () => {
+  it('ADMUI-012 requires an authenticated Admin BFF session', () => {
     const appRoute = routes.find((candidate) => candidate.path === 'app');
     const catalogueRoute = appRoute?.children?.find(
       (candidate) => candidate.path === 'catalogue',
     );
 
     expect(appRoute).toBeDefined();
-    expect(appRoute?.canActivate).toHaveLength(2);
+    expect(appRoute?.canActivate).toEqual([authenticatedGuard]);
     expect(appRoute?.loadComponent).toBeTypeOf('function');
     expect(catalogueRoute?.loadChildren).toBeTypeOf('function');
   });

@@ -627,7 +627,7 @@ main {
 }
 
 .access-panel,
-.permissions-panel {
+.authorization-panel {
   padding: 1rem;
   border: 1px solid var(--tng-semantic-border-subtle);
   border-radius: 0.8rem;
@@ -686,34 +686,6 @@ dd {
   overflow-wrap: anywhere;
   font-size: 0.78rem;
   font-weight: 650;
-}
-
-.permission-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-  padding-top: 0.85rem;
-}
-
-.permission-list code {
-  padding: 0.34rem 0.48rem;
-  border: 1px solid
-    color-mix(in srgb, var(--tng-semantic-accent-brand) 22%, transparent);
-  border-radius: 0.42rem;
-  background: color-mix(
-    in srgb,
-    var(--tng-semantic-accent-brand) 8%,
-    transparent
-  );
-  color: var(--tng-semantic-foreground-secondary);
-  font-size: 0.68rem;
-}
-
-.empty-state {
-  margin: 0;
-  padding-top: 0.85rem;
-  color: var(--tng-semantic-foreground-muted);
-  font-size: 0.78rem;
 }
 
 @media (max-width: 68rem) {
