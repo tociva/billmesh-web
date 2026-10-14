@@ -20,6 +20,10 @@ export class BillmeshApiClient {
     return this.http.patch<TResponse>(this.resolvePath(path), body);
   }
 
+  put<TResponse, TBody>(path: string, body: TBody): Observable<TResponse> {
+    return this.http.put<TResponse>(this.resolvePath(path), body);
+  }
+
   private resolvePath(path: string): string {
     const baseUrl = this.configStore.activeApiBaseUrl();
     if (!baseUrl) {

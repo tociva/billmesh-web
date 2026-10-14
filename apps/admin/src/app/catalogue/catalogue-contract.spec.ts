@@ -222,4 +222,71 @@ describe('CatalogueAdminService', () => {
       credit_packs: 0,
     });
   });
+
+  it('configures delegated access and applies versioned bulk JSON', () => {
+    const delegation = {
+      environment: 'development',
+      expected_version: 0,
+      enabled: true,
+      authorizer_client_id: 'daybook-billmesh-authorizer-dev',
+      actors: [
+        {
+          client_id: 'daybook-billmesh-user-dev',
+          profile: 'billing',
+          actor_type: 'user',
+          enabled: true,
+        },
+        {
+          client_id: 'daybook-billmesh-runtime-dev',
+          profile: 'runtime',
+          actor_type: 'service',
+          enabled: true,
+        },
+      ],
+    } as const;
+
+    catalogue.listProductDelegatedAccess('product/1').subscribe();
+    const list = requests.expectOne(
+      'https://api-local.billme.sh/api/v1/admin/products/product%2F1/delegated-access',
+    );
+    expect(list.request.method).toBe('GET');
+    list.flush([]);
+
+    catalogue
+      .putProductDelegatedAccess('product/1', 'development', delegation)
+      .subscribe();
+    const put = requests.expectOne(
+      'https://api-local.billme.sh/api/v1/admin/products/product%2F1/delegated-access/development',
+    );
+    expect(put.request.method).toBe('PUT');
+    expect(put.request.body).toEqual(delegation);
+    put.flush({ ...delegation, product_id: 'product/1', version: 1 });
+
+    const bulk = {
+      schema_version: 1,
+      products: [],
+    } as const;
+    catalogue.validateCatalogueBulk(bulk).subscribe();
+    const validate = requests.expectOne(
+      'https://api-local.billme.sh/api/v1/admin/catalogue/bulk/validate',
+    );
+    expect(validate.request.method).toBe('POST');
+    expect(validate.request.body).toEqual(bulk);
+    validate.flush({
+      valid: true,
+      schema_version: 1,
+      products: 0,
+      plans: 0,
+      credit_packs: 0,
+      issues: [],
+    });
+
+    catalogue.applyCatalogueBulk(bulk).subscribe();
+    const apply = requests.expectOne(
+      'https://api-local.billme.sh/api/v1/admin/catalogue/bulk/apply',
+    );
+    expect(apply.request.method).toBe('POST');
+    expect(apply.request.body).toEqual(bulk);
+    apply.flush({});
+  });
 });

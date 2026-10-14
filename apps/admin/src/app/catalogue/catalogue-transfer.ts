@@ -1,5 +1,6 @@
 import type {
   BillingPolicy,
+  CatalogueBulkDocument,
   CatalogueTransfer,
   CatalogueTransferCreditPack,
   CatalogueTransferPlan,
@@ -17,6 +18,34 @@ export type {
 } from '@billmesh/domain';
 
 export const CATALOGUE_TRANSFER_SCHEMA_VERSION = 2 as const;
+
+export function parseCatalogueBulkDocument(
+  text: string,
+): CatalogueBulkDocument {
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    throw new Error('The selected file is not valid JSON.');
+  }
+  const root = record(value, 'The bulk catalogue file');
+  if (root['schema_version'] !== 1) {
+    throw new Error('Bulk catalogue schema_version must be 1.');
+  }
+  if (!Array.isArray(root['products'])) {
+    throw new Error('The bulk catalogue file must contain a products array.');
+  }
+  root['products'].forEach((item, index) => {
+    const product = record(item, `products[${index}]`);
+    const operation = product['operation'];
+    if (operation !== 'create' && operation !== 'update') {
+      throw new Error(`products[${index}].operation must be create or update.`);
+    }
+    nonNegativeInteger(product, 'expected_version', `products[${index}]`);
+    requiredString(product, 'slug', `products[${index}]`);
+  });
+  return value as CatalogueBulkDocument;
+}
 
 export interface CatalogueProductWithPlans {
   readonly product: Product;

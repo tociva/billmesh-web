@@ -204,6 +204,7 @@ export interface ProductCreate {
   readonly description?: string;
   readonly entitlement_schema?: EntitlementSchema;
   readonly billing_policy?: BillingPolicy;
+  readonly delegated_access?: readonly ProductDelegationConfigurationInput[];
 }
 
 export interface ProductUpdate {
@@ -213,6 +214,32 @@ export interface ProductUpdate {
   readonly entitlement_schema?: EntitlementSchema;
   readonly billing_policy?: BillingPolicy;
   readonly active?: boolean;
+  readonly delegated_access?: readonly ProductDelegationConfigurationInput[];
+}
+
+export interface ProductDelegationConfigurationInput {
+  readonly environment: string;
+  readonly expected_version: number;
+  readonly enabled: boolean;
+  readonly authorizer_client_id: string;
+  readonly actors: readonly ProductDelegationActor[];
+}
+
+export interface ProductDelegationActor {
+  readonly client_id: string;
+  readonly profile: 'catalogue' | 'billing' | 'runtime';
+  readonly actor_type: 'user' | 'service';
+  readonly enabled: boolean;
+}
+
+export interface ProductDelegationConfiguration extends Omit<
+  ProductDelegationConfigurationInput,
+  'expected_version'
+> {
+  readonly product_id: string;
+  readonly version: number;
+  readonly created_at: string;
+  readonly updated_at: string;
 }
 
 export interface PlanCreate {
@@ -314,6 +341,49 @@ export interface CatalogueTransferImportResult {
   readonly products: number;
   readonly plans: number;
   readonly credit_packs: number;
+}
+
+export interface CatalogueBulkPlan extends CatalogueTransferPlan {
+  readonly operation: 'create' | 'update';
+  readonly expected_version: number;
+}
+
+export interface CatalogueBulkCreditPack extends CatalogueTransferCreditPack {
+  readonly operation: 'create' | 'update';
+  readonly expected_version: number;
+}
+
+export interface CatalogueBulkProduct {
+  readonly operation: 'create' | 'update';
+  readonly expected_version: number;
+  readonly slug: string;
+  readonly name: string;
+  readonly description: string;
+  readonly entitlement_schema: EntitlementSchema;
+  readonly billing_policy: BillingPolicy;
+  readonly active: boolean;
+  readonly delegated_access?: readonly ProductDelegationConfigurationInput[];
+  readonly plans?: readonly CatalogueBulkPlan[];
+  readonly credit_packs?: readonly CatalogueBulkCreditPack[];
+}
+
+export interface CatalogueBulkDocument {
+  readonly schema_version: 1;
+  readonly products: readonly CatalogueBulkProduct[];
+}
+
+export interface CatalogueBulkResourceResult {
+  readonly created: number;
+  readonly updated: number;
+  readonly unchanged: number;
+}
+
+export interface CatalogueBulkResult {
+  readonly schema_version: 1;
+  readonly products: CatalogueBulkResourceResult;
+  readonly plans: CatalogueBulkResourceResult;
+  readonly credit_packs: CatalogueBulkResourceResult;
+  readonly delegated_access: CatalogueBulkResourceResult;
 }
 
 export interface PageResult<T> {

@@ -27,6 +27,14 @@
       </p>
     </div>
     <div class="actions">
+      <input
+        #bulkFileInput
+        class="visually-hidden"
+        type="file"
+        accept=".json,application/json"
+        [disabled]="bulkApplying() || importing() || exporting()"
+        (change)="handleBulkFileInput($event)"
+      />
       <billmesh-filter-popover
         ariaLabel="Product filters"
         title="Filter products"
@@ -49,6 +57,14 @@
         (click)="toggleImport()"
       >
         Import JSON
+      </tng-button>
+      <tng-button
+        type="button"
+        appearance="outline"
+        [disabled]="bulkApplying() || exporting() || importing()"
+        (click)="bulkFileInput.click()"
+      >
+        {{ bulkApplying() ? 'Applying…' : 'Apply bulk JSON' }}
       </tng-button>
       <tng-button
         type="button"

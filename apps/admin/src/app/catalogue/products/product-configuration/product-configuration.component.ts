@@ -3,7 +3,9 @@ import {
   FormBuilder,
   ReactiveFormsModule,
   Validators,
+  type FormArray,
   type FormControl,
+  type FormGroup,
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CatalogueAdminService } from '@billmesh/api-client';
@@ -12,6 +14,8 @@ import type {
   BillingPolicyMetadata,
   EntitlementSchema,
   Product,
+  ProductDelegationConfiguration,
+  ProductDelegationConfigurationInput,
 } from '@billmesh/domain';
 import {
   TngButtonComponent,
@@ -32,6 +36,26 @@ type PolicyOption = Readonly<{
   value: string;
   label: string;
   description: string;
+}>;
+
+type DelegationProfile =
+  ProductDelegationConfigurationInput['actors'][number]['profile'];
+type DelegationActorType =
+  ProductDelegationConfigurationInput['actors'][number]['actor_type'];
+
+type DelegationActorForm = FormGroup<{
+  clientId: FormControl<string>;
+  profile: FormControl<DelegationProfile>;
+  actorType: FormControl<DelegationActorType>;
+  enabled: FormControl<boolean>;
+}>;
+
+type DelegationConfigurationForm = FormGroup<{
+  environment: FormControl<string>;
+  expectedVersion: FormControl<number>;
+  enabled: FormControl<boolean>;
+  authorizerClientId: FormControl<string>;
+  actors: FormArray<DelegationActorForm>;
 }>;
 
 const POLICY_OPTION_COPY: Readonly<
@@ -330,6 +354,12 @@ export class ProductConfigurationComponent {
     ],
     name: ['', [Validators.required, Validators.maxLength(120)]],
     description: ['', [Validators.maxLength(2000)]],
+    delegatedAccess: this.formBuilder.nonNullable.group({
+      configure: [false],
+      configurations: this.formBuilder.array<DelegationConfigurationForm>([
+        this.createDelegationConfigurationGroup(),
+      ]),
+    }),
     policy: this.formBuilder.nonNullable.group({
       customerScope: ['identity'],
       freeAllowance: [
@@ -411,7 +441,12 @@ export class ProductConfigurationComponent {
   }
 
   protected submit(): void {
-    if (this.form.invalid || !this.productEntitlements?.valid) {
+    if (
+      this.form.invalid ||
+      !this.productEntitlements?.valid ||
+      Boolean(this.policyValidationError()) ||
+      Boolean(this.delegationValidationError())
+    ) {
       this.form.markAllAsTouched();
       this.productEntitlements?.markAllAsTouched();
       return;
@@ -419,6 +454,13 @@ export class ProductConfigurationComponent {
     this.saving.set(true);
     this.error.set('');
     const value = this.form.getRawValue();
+    const delegationConfigurations =
+      this.form.controls.delegatedAccess.controls.configurations;
+    const delegatedAccess =
+      value.delegatedAccess.configure &&
+      (!this.editMode || delegationConfigurations.dirty)
+        ? this.delegatedAccessInputs()
+        : undefined;
     const request = this.productId
       ? this.catalogue.updateProduct(this.productId, {
           version: this.product()!.version,
@@ -426,6 +468,7 @@ export class ProductConfigurationComponent {
           description: value.description.trim(),
           entitlement_schema: this.productEntitlements.value(),
           billing_policy: this.billingPolicy(),
+          ...(delegatedAccess ? { delegated_access: delegatedAccess } : {}),
         })
       : this.catalogue.createProduct({
           slug: value.slug.trim(),
@@ -433,6 +476,7 @@ export class ProductConfigurationComponent {
           description: value.description.trim(),
           entitlement_schema: this.productEntitlements.value(),
           billing_policy: this.billingPolicy(),
+          ...(delegatedAccess ? { delegated_access: delegatedAccess } : {}),
         });
     request.subscribe({
       next: (product) => {
@@ -453,12 +497,19 @@ export class ProductConfigurationComponent {
       !this.saving() &&
       this.form.valid &&
       Boolean(this.productEntitlements?.valid) &&
-      !this.policyValidationError()
+      !this.policyValidationError() &&
+      !this.delegationValidationError()
     );
   }
 
   protected setupSteps() {
     return [
+      {
+        value: 'delegated-access',
+        label: 'Delegated access',
+        description: 'IdNest OAuth client mapping',
+        completed: !this.delegationValidationError(),
+      },
       {
         value: 'details',
         label: 'Product details',
@@ -490,9 +541,12 @@ export class ProductConfigurationComponent {
     );
   }
 
-  protected updateSelect(control: FormControl<string>, value: unknown): void {
+  protected updateSelect<T extends string>(
+    control: FormControl<T>,
+    value: unknown,
+  ): void {
     if (typeof value !== 'string') return;
-    control.setValue(value);
+    control.setValue(value as T);
     control.markAsDirty();
   }
 
@@ -538,7 +592,29 @@ export class ProductConfigurationComponent {
         });
         this.setPolicy(product.billing_policy);
         this.form.controls.slug.disable();
-        this.loading.set(false);
+        this.catalogue.listProductDelegatedAccess(id).subscribe({
+          next: (configurations) => {
+            const forms =
+              this.form.controls.delegatedAccess.controls.configurations;
+            forms.clear();
+            for (const configuration of configurations) {
+              forms.push(
+                this.createDelegationConfigurationGroup(configuration),
+              );
+            }
+            if (forms.length === 0) {
+              forms.push(this.createDelegationConfigurationGroup());
+            }
+            this.form.controls.delegatedAccess.controls.configure.setValue(
+              configurations.length > 0,
+            );
+            this.loading.set(false);
+          },
+          error: (error: unknown) => {
+            this.error.set(catalogueMessage(error));
+            this.loading.set(false);
+          },
+        });
       },
       error: (error: unknown) => {
         this.error.set(catalogueMessage(error));
@@ -630,6 +706,186 @@ export class ProductConfigurationComponent {
       }
     }
     return '';
+  }
+
+  protected delegationValidationError(): string {
+    const value = this.form.controls.delegatedAccess.getRawValue();
+    if (!value.configure) return '';
+    const environments = new Set<string>();
+    for (const configuration of value.configurations) {
+      const environment = configuration.environment.trim();
+      if (!/^[a-z][a-z0-9-]{0,62}$/.test(environment)) {
+        return 'Each delegated-access environment must be lowercase and hyphenated.';
+      }
+      if (environments.has(environment)) {
+        return 'Delegated-access environments must be unique.';
+      }
+      environments.add(environment);
+      const authorizer = configuration.authorizerClientId.trim();
+      if (!authorizer || authorizer.length > 255) {
+        return 'Each environment requires a valid grant authorizer client ID.';
+      }
+      const actorIds = new Set<string>();
+      let enabledActors = 0;
+      for (const actor of configuration.actors) {
+        const clientId = actor.clientId.trim();
+        if (!clientId || clientId.length > 255) {
+          return 'Every actor requires a valid OAuth client ID.';
+        }
+        if (clientId === authorizer) {
+          return 'The grant authorizer client cannot also be an actor.';
+        }
+        if (actorIds.has(clientId)) {
+          return 'Actor client IDs must be unique within an environment.';
+        }
+        actorIds.add(clientId);
+        if (
+          (actor.profile === 'catalogue' || actor.profile === 'runtime') &&
+          actor.actorType !== 'service'
+        ) {
+          return `${actor.profile} actors must use the service actor type.`;
+        }
+        if (
+          actor.profile !== 'catalogue' &&
+          actor.profile !== 'billing' &&
+          actor.profile !== 'runtime'
+        ) {
+          return 'Actor profile must be catalogue, billing, or runtime.';
+        }
+        if (actor.enabled) enabledActors += 1;
+      }
+      if (configuration.enabled && enabledActors === 0) {
+        return 'Every enabled environment requires at least one enabled actor.';
+      }
+    }
+    return '';
+  }
+
+  protected addDelegationConfiguration(): void {
+    const configurations =
+      this.form.controls.delegatedAccess.controls.configurations;
+    configurations.push(this.createDelegationConfigurationGroup());
+    configurations.markAsDirty();
+  }
+
+  protected removeDelegationConfiguration(index: number): void {
+    const configurations =
+      this.form.controls.delegatedAccess.controls.configurations;
+    const configuration = configurations.at(index);
+    if (configuration.controls.expectedVersion.value > 0) {
+      configuration.controls.enabled.setValue(false);
+      configuration.markAsDirty();
+      return;
+    }
+    configurations.removeAt(index);
+    configurations.markAsDirty();
+    if (configurations.length === 0) {
+      configurations.push(this.createDelegationConfigurationGroup());
+    }
+  }
+
+  protected addDelegationActor(
+    configuration: DelegationConfigurationForm,
+  ): void {
+    configuration.controls.actors.push(this.createDelegationActorGroup());
+    configuration.controls.actors.markAsDirty();
+  }
+
+  protected removeDelegationActor(
+    configuration: DelegationConfigurationForm,
+    index: number,
+  ): void {
+    configuration.controls.actors.removeAt(index);
+    configuration.controls.actors.markAsDirty();
+  }
+
+  protected updateDelegationProfile(
+    actor: DelegationActorForm,
+    value: unknown,
+  ): void {
+    if (value !== 'catalogue' && value !== 'billing' && value !== 'runtime') {
+      return;
+    }
+    actor.controls.profile.setValue(value);
+    if (value !== 'billing') actor.controls.actorType.setValue('service');
+    actor.markAsDirty();
+  }
+
+  protected readonly delegationProfileOptions = [
+    { value: 'catalogue', label: 'Catalogue' },
+    { value: 'billing', label: 'Billing' },
+    { value: 'runtime', label: 'Runtime' },
+  ];
+
+  protected delegationActorTypeOptions(profile: string) {
+    return profile === 'billing'
+      ? [
+          { value: 'user', label: 'User' },
+          { value: 'service', label: 'Service' },
+        ]
+      : [{ value: 'service', label: 'Service' }];
+  }
+
+  private delegatedAccessInputs(): ProductDelegationConfigurationInput[] {
+    return this.form.controls.delegatedAccess.controls.configurations.controls.map(
+      (configuration) => {
+        const value = configuration.getRawValue();
+        return {
+          environment: value.environment.trim(),
+          expected_version: value.expectedVersion,
+          enabled: value.enabled,
+          authorizer_client_id: value.authorizerClientId.trim(),
+          actors: value.actors.map((actor) => ({
+            client_id: actor.clientId.trim(),
+            profile: actor.profile as 'catalogue' | 'billing' | 'runtime',
+            actor_type: actor.actorType as 'user' | 'service',
+            enabled: actor.enabled,
+          })),
+        };
+      },
+    );
+  }
+
+  private createDelegationActorGroup(
+    actor?: ProductDelegationConfigurationInput['actors'][number],
+  ): DelegationActorForm {
+    return this.formBuilder.group({
+      clientId: this.formBuilder.nonNullable.control(actor?.client_id ?? ''),
+      profile: this.formBuilder.nonNullable.control<DelegationProfile>(
+        actor?.profile ?? 'billing',
+      ),
+      actorType: this.formBuilder.nonNullable.control<DelegationActorType>(
+        actor?.actor_type ?? 'service',
+      ),
+      enabled: this.formBuilder.nonNullable.control(actor?.enabled ?? true),
+    });
+  }
+
+  private createDelegationConfigurationGroup(
+    configuration?:
+      ProductDelegationConfigurationInput | ProductDelegationConfiguration,
+  ): DelegationConfigurationForm {
+    const group = this.formBuilder.nonNullable.group({
+      environment: [configuration?.environment ?? 'development'],
+      expectedVersion: [
+        configuration
+          ? 'version' in configuration
+            ? configuration.version
+            : configuration.expected_version
+          : 0,
+      ],
+      enabled: [configuration?.enabled ?? true],
+      authorizerClientId: [configuration?.authorizer_client_id ?? ''],
+      actors: this.formBuilder.array<DelegationActorForm>(
+        (configuration?.actors ?? []).map((actor) =>
+          this.createDelegationActorGroup(actor),
+        ),
+      ),
+    });
+    if (configuration && 'version' in configuration) {
+      group.controls.environment.disable();
+    }
+    return group;
   }
 
   private billingPolicy(): BillingPolicy {

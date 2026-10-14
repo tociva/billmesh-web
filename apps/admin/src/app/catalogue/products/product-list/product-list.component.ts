@@ -4,7 +4,7 @@ import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CatalogueAdminService } from '@billmesh/api-client';
-import type { Product } from '@billmesh/domain';
+import type { CatalogueBulkDocument, Product } from '@billmesh/domain';
 import {
   FilterPopoverComponent,
   type FilterPopoverField,
@@ -37,6 +37,7 @@ import {
   catalogueTransferCreditPackCount,
   catalogueTransferPlanCount,
   parseCatalogueTransfer,
+  parseCatalogueBulkDocument,
   type CatalogueTransfer,
 } from '../../catalogue-transfer';
 
@@ -77,6 +78,7 @@ export class ProductListComponent {
   protected readonly uploadDragState = signal<TngFileUploadDragState>('idle');
   protected readonly importing = signal(false);
   protected readonly exporting = signal(false);
+  protected readonly bulkApplying = signal(false);
   protected readonly selectedImport = signal<{
     readonly fileName: string;
     readonly transfer: CatalogueTransfer;
@@ -287,6 +289,13 @@ export class ProductListComponent {
     }
   }
 
+  protected handleBulkFileInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const [file] = Array.from(input.files ?? []);
+    input.value = '';
+    if (file) void this.applyBulkFile(file);
+  }
+
   protected viewProduct(product: Product): void {
     void this.router.navigate(['/app/catalogue', product.id], {
       queryParams: { burl: this.router.url },
@@ -362,6 +371,44 @@ export class ProductListComponent {
     }
   }
 
+  private async applyBulkFile(file: File): Promise<void> {
+    this.transferError.set('');
+    this.transferSuccess.set('');
+    if (file.size > this.importMaxSize) {
+      this.transferError.set(
+        'The bulk catalogue JSON file must be smaller than 1 MB.',
+      );
+      return;
+    }
+    this.bulkApplying.set(true);
+    try {
+      const document: CatalogueBulkDocument = parseCatalogueBulkDocument(
+        await file.text(),
+      );
+      const validation = await firstValueFrom(
+        this.catalogue.validateCatalogueBulk(document),
+      );
+      if (!validation.valid) {
+        throw new Error(
+          validation.issues
+            .map((issue) => `${issue.path}: ${issue.message}`)
+            .join(' '),
+        );
+      }
+      const result = await firstValueFrom(
+        this.catalogue.applyCatalogueBulk(document),
+      );
+      this.transferSuccess.set(
+        `Bulk update applied: ${result.products.created} product(s) created, ${result.products.updated} updated; ${result.delegated_access.created + result.delegated_access.updated} delegated-access configuration(s) saved.`,
+      );
+      this.loadProducts();
+    } catch (error: unknown) {
+      this.transferError.set(this.transferMessage(error));
+    } finally {
+      this.bulkApplying.set(false);
+    }
+  }
+
   private downloadTransfer(transfer: CatalogueTransfer): void {
     const json = `${JSON.stringify(transfer, null, 2)}\n`;
     const blob = new Blob([json], { type: 'application/json' });
@@ -387,9 +434,7 @@ export class ProductListComponent {
       : catalogueMessage(error);
   }
 
-  private isTransferIssueResponse(
-    value: unknown,
-  ): value is {
+  private isTransferIssueResponse(value: unknown): value is {
     readonly issues: readonly {
       readonly path: string;
       readonly message: string;
