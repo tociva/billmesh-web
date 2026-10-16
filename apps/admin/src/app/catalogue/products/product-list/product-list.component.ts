@@ -4,7 +4,7 @@ import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CatalogueAdminService } from '@billmesh/api-client';
-import type { CatalogueBulkDocument, Product } from '@billmesh/domain';
+import type { Product } from '@billmesh/domain';
 import {
   FilterPopoverComponent,
   type FilterPopoverField,
@@ -34,10 +34,11 @@ import {
   pageSize,
 } from '../../catalogue.helpers';
 import {
+  catalogueTransferActorCount,
   catalogueTransferCreditPackCount,
+  catalogueTransferDelegatedAccessCount,
   catalogueTransferPlanCount,
   parseCatalogueTransfer,
-  parseCatalogueBulkDocument,
   type CatalogueTransfer,
 } from '../../catalogue-transfer';
 
@@ -78,7 +79,6 @@ export class ProductListComponent {
   protected readonly uploadDragState = signal<TngFileUploadDragState>('idle');
   protected readonly importing = signal(false);
   protected readonly exporting = signal(false);
-  protected readonly bulkApplying = signal(false);
   protected readonly selectedImport = signal<{
     readonly fileName: string;
     readonly transfer: CatalogueTransfer;
@@ -247,6 +247,14 @@ export class ProductListComponent {
     return catalogueTransferCreditPackCount(transfer);
   }
 
+  protected importDelegatedAccessCount(transfer: CatalogueTransfer): number {
+    return catalogueTransferDelegatedAccessCount(transfer);
+  }
+
+  protected importActorCount(transfer: CatalogueTransfer): number {
+    return catalogueTransferActorCount(transfer);
+  }
+
   protected async exportCatalogue(): Promise<void> {
     this.exporting.set(true);
     this.transferError.set('');
@@ -255,7 +263,7 @@ export class ProductListComponent {
       const transfer = await firstValueFrom(this.catalogue.exportCatalogue());
       this.downloadTransfer(transfer);
       this.transferSuccess.set(
-        `Exported ${transfer.products.length} product${transfer.products.length === 1 ? '' : 's'}, ${catalogueTransferPlanCount(transfer)} plan${catalogueTransferPlanCount(transfer) === 1 ? '' : 's'}, and ${catalogueTransferCreditPackCount(transfer)} credit pack${catalogueTransferCreditPackCount(transfer) === 1 ? '' : 's'}.`,
+        `Exported ${transfer.products.length} product${transfer.products.length === 1 ? '' : 's'}, ${catalogueTransferPlanCount(transfer)} plan${catalogueTransferPlanCount(transfer) === 1 ? '' : 's'}, ${catalogueTransferCreditPackCount(transfer)} credit pack${catalogueTransferCreditPackCount(transfer) === 1 ? '' : 's'}, and ${catalogueTransferDelegatedAccessCount(transfer)} delegated-access configuration${catalogueTransferDelegatedAccessCount(transfer) === 1 ? '' : 's'}.`,
       );
     } catch (error: unknown) {
       this.transferError.set(this.transferMessage(error));
@@ -279,7 +287,7 @@ export class ProductListComponent {
       this.selectedImport.set(null);
       this.importOpen.set(false);
       this.transferSuccess.set(
-        `Imported ${imported.products} product${imported.products === 1 ? '' : 's'}, ${imported.plans} plan${imported.plans === 1 ? '' : 's'}, and ${imported.credit_packs} credit pack${imported.credit_packs === 1 ? '' : 's'}.`,
+        `Imported ${imported.products} product${imported.products === 1 ? '' : 's'}, ${imported.plans} plan${imported.plans === 1 ? '' : 's'}, ${imported.credit_packs} credit pack${imported.credit_packs === 1 ? '' : 's'}, and ${imported.delegated_access} delegated-access configuration${imported.delegated_access === 1 ? '' : 's'}.`,
       );
       this.loadProducts();
     } catch (error: unknown) {
@@ -287,13 +295,6 @@ export class ProductListComponent {
     } finally {
       this.importing.set(false);
     }
-  }
-
-  protected handleBulkFileInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const [file] = Array.from(input.files ?? []);
-    input.value = '';
-    if (file) void this.applyBulkFile(file);
   }
 
   protected viewProduct(product: Product): void {
@@ -368,44 +369,6 @@ export class ProductListComponent {
       });
     } catch (error: unknown) {
       this.transferError.set(this.transferMessage(error));
-    }
-  }
-
-  private async applyBulkFile(file: File): Promise<void> {
-    this.transferError.set('');
-    this.transferSuccess.set('');
-    if (file.size > this.importMaxSize) {
-      this.transferError.set(
-        'The bulk catalogue JSON file must be smaller than 1 MB.',
-      );
-      return;
-    }
-    this.bulkApplying.set(true);
-    try {
-      const document: CatalogueBulkDocument = parseCatalogueBulkDocument(
-        await file.text(),
-      );
-      const validation = await firstValueFrom(
-        this.catalogue.validateCatalogueBulk(document),
-      );
-      if (!validation.valid) {
-        throw new Error(
-          validation.issues
-            .map((issue) => `${issue.path}: ${issue.message}`)
-            .join(' '),
-        );
-      }
-      const result = await firstValueFrom(
-        this.catalogue.applyCatalogueBulk(document),
-      );
-      this.transferSuccess.set(
-        `Bulk update applied: ${result.products.created} product(s) created, ${result.products.updated} updated; ${result.delegated_access.created + result.delegated_access.updated} delegated-access configuration(s) saved.`,
-      );
-      this.loadProducts();
-    } catch (error: unknown) {
-      this.transferError.set(this.transferMessage(error));
-    } finally {
-      this.bulkApplying.set(false);
     }
   }
 

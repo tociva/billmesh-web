@@ -4,8 +4,6 @@ import type {
   CatalogueTransfer,
   CatalogueTransferImportResult,
   CatalogueTransferValidation,
-  CatalogueBulkDocument,
-  CatalogueBulkResult,
   ProductDelegationConfiguration,
   ProductDelegationConfigurationInput,
   Plan,
@@ -76,30 +74,6 @@ export class CatalogueAdminService {
   ): Observable<CatalogueTransferImportResult> {
     return this.api.post<CatalogueTransferImportResult, CatalogueTransfer>(
       '/admin/catalogue/import',
-      input,
-    );
-  }
-
-  getCatalogueBulkTemplate(): Observable<CatalogueBulkDocument> {
-    return this.api.get<CatalogueBulkDocument>(
-      '/admin/catalogue/bulk/template',
-    );
-  }
-
-  validateCatalogueBulk(
-    input: CatalogueBulkDocument,
-  ): Observable<CatalogueTransferValidation> {
-    return this.api.post<CatalogueTransferValidation, CatalogueBulkDocument>(
-      '/admin/catalogue/bulk/validate',
-      input,
-    );
-  }
-
-  applyCatalogueBulk(
-    input: CatalogueBulkDocument,
-  ): Observable<CatalogueBulkResult> {
-    return this.api.post<CatalogueBulkResult, CatalogueBulkDocument>(
-      '/admin/catalogue/bulk/apply',
       input,
     );
   }

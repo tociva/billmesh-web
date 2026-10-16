@@ -27,14 +27,6 @@
       </p>
     </div>
     <div class="actions">
-      <input
-        #bulkFileInput
-        class="visually-hidden"
-        type="file"
-        accept=".json,application/json"
-        [disabled]="bulkApplying() || importing() || exporting()"
-        (change)="handleBulkFileInput($event)"
-      />
       <billmesh-filter-popover
         ariaLabel="Product filters"
         title="Filter products"
@@ -57,14 +49,6 @@
         (click)="toggleImport()"
       >
         Import JSON
-      </tng-button>
-      <tng-button
-        type="button"
-        appearance="outline"
-        [disabled]="bulkApplying() || exporting() || importing()"
-        (click)="bulkFileInput.click()"
-      >
-        {{ bulkApplying() ? 'Applying…' : 'Apply bulk JSON' }}
       </tng-button>
       <tng-button
         type="button"
@@ -95,9 +79,9 @@
             <p class="eyebrow">Portable catalogue</p>
             <h3 id="import-heading">Import catalogue JSON</h3>
             <p>
-              Import validates products, plans, and credit packs before creating
-              them in one transaction. Existing product slugs are rejected and
-              never overwritten.
+              Import validates products, plans, credit packs, and delegated
+              access before creating them in one transaction. If any product
+              slug already exists, nothing is imported.
             </p>
           </div>
           <tng-button
@@ -138,7 +122,10 @@
               <span>
                 {{ selected.transfer.products.length }} product(s) ·
                 {{ importPlanCount(selected.transfer) }} plan(s) ·
-                {{ importCreditPackCount(selected.transfer) }} credit pack(s)
+                {{ importCreditPackCount(selected.transfer) }} credit pack(s) ·
+                {{ importDelegatedAccessCount(selected.transfer) }} delegated
+                environment(s) ·
+                {{ importActorCount(selected.transfer) }} actor(s)
               </span>
             </div>
             <div class="actions">

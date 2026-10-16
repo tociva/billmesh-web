@@ -2,7 +2,12 @@ import { DatePipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CatalogueAdminService } from '@billmesh/api-client';
-import type { EntitlementField, Product } from '@billmesh/domain';
+import type {
+  EntitlementField,
+  Product,
+  ProductDelegationActor,
+  ProductDelegationConfiguration,
+} from '@billmesh/domain';
 import {
   TngButtonComponent,
   TngCardComponent,
@@ -35,6 +40,11 @@ export class ProductDetailsComponent {
   protected readonly product = signal<Product | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal('');
+  protected readonly delegatedAccess = signal<
+    readonly ProductDelegationConfiguration[]
+  >([]);
+  protected readonly delegatedAccessLoading = signal(true);
+  protected readonly delegatedAccessError = signal('');
   protected readonly entitlementColumns: readonly TngTableColumn<EntitlementField>[] =
     [
       { id: 'label', label: 'Entitlement', width: '16rem' },
@@ -44,9 +54,18 @@ export class ProductDetailsComponent {
       { id: 'default', label: 'Default', width: '10rem' },
       { id: 'constraints', label: 'Constraints' },
     ];
+  protected readonly delegationActorColumns: readonly TngTableColumn<ProductDelegationActor>[] =
+    [
+      { id: 'client_id', label: 'Actor client ID', width: '24rem' },
+      { id: 'profile', label: 'Billmesh profile', width: '11rem' },
+      { id: 'actor_type', label: 'Actor type', width: '9rem' },
+      { id: 'scope', label: 'Derived scope', width: '14rem' },
+      { id: 'status', label: 'Status', width: '8rem' },
+    ];
 
   constructor() {
     this.loadProduct();
+    this.loadDelegatedAccess();
   }
 
   protected loadProduct(): void {
@@ -59,6 +78,21 @@ export class ProductDetailsComponent {
       error: (error: unknown) => {
         this.error.set(catalogueMessage(error));
         this.loading.set(false);
+      },
+    });
+  }
+
+  protected loadDelegatedAccess(): void {
+    this.delegatedAccessLoading.set(true);
+    this.delegatedAccessError.set('');
+    this.catalogue.listProductDelegatedAccess(this.productId).subscribe({
+      next: (configurations) => {
+        this.delegatedAccess.set(configurations);
+        this.delegatedAccessLoading.set(false);
+      },
+      error: (error: unknown) => {
+        this.delegatedAccessError.set(catalogueMessage(error));
+        this.delegatedAccessLoading.set(false);
       },
     });
   }
@@ -116,6 +150,20 @@ export class ProductDetailsComponent {
       constraints.push(`${field.fields.length} nested fields`);
     if (field.items) constraints.push(`items: ${field.items.type}`);
     return constraints.join(' · ') || '—';
+  }
+
+  protected delegationScope(
+    profile: ProductDelegationActor['profile'],
+  ): string {
+    return `billmesh.${profile}`;
+  }
+
+  protected delegationLabel(value: string): string {
+    return value
+      .split(/[-_]/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
   }
 
   private returnUrl(): string {

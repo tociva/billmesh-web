@@ -56,10 +56,11 @@ describe('catalogue JSON transfer', () => {
       new Date('2026-10-06T00:00:00Z'),
     );
 
-    expect(transfer.schema_version).toBe(2);
+    expect(transfer.schema_version).toBe(3);
     expect(transfer.exported_at).toBe('2026-10-06T00:00:00.000Z');
     expect(catalogueTransferPlanCount(transfer)).toBe(1);
     expect(transfer.products[0]?.credit_packs).toEqual([]);
+    expect(transfer.products[0]?.delegated_access).toEqual([]);
     expect(transfer.products[0]).toMatchObject({
       slug: 'invoice-api',
       active: true,

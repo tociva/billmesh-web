@@ -128,6 +128,126 @@
 
         <section
           class="plans-section"
+          aria-labelledby="delegated-access-heading"
+        >
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">IdNest integration</p>
+              <h3 id="delegated-access-heading">Delegated access</h3>
+              <p class="section-description">
+                OAuth client IDs and the Billmesh profiles assigned to this
+                product.
+              </p>
+            </div>
+          </div>
+
+          @if (delegatedAccessLoading()) {
+            <p class="state" role="status">Loading delegated access…</p>
+          } @else if (delegatedAccessError()) {
+            <div
+              class="notice notice--error delegated-access-error"
+              role="alert"
+            >
+              <span>{{ delegatedAccessError() }}</span>
+              <tng-button
+                type="button"
+                appearance="outline"
+                (click)="loadDelegatedAccess()"
+                >Retry</tng-button
+              >
+            </div>
+          } @else if (delegatedAccess().length) {
+            <div class="delegated-environments">
+              @for (
+                configuration of delegatedAccess();
+                track configuration.environment
+              ) {
+                <article class="delegated-environment">
+                  <header class="delegated-environment__header">
+                    <div>
+                      <p class="eyebrow">Environment</p>
+                      <h4>
+                        {{ delegationLabel(configuration.environment) }}
+                      </h4>
+                    </div>
+                    <span
+                      [class]="
+                        configuration.enabled
+                          ? 'status active'
+                          : 'status archived'
+                      "
+                    >
+                      {{ configuration.enabled ? 'Active' : 'Disabled' }}
+                    </span>
+                  </header>
+
+                  <div class="detail-grid delegated-environment__summary">
+                    <dl>
+                      <dt>Grant authorizer client</dt>
+                      <dd>
+                        <code>{{ configuration.authorizer_client_id }}</code>
+                      </dd>
+                    </dl>
+                    <dl>
+                      <dt>Configuration</dt>
+                      <dd>
+                        Version {{ configuration.version }} · Updated
+                        {{ configuration.updated_at | date: 'medium' }}
+                      </dd>
+                    </dl>
+                  </div>
+
+                  @if (configuration.actors.length) {
+                    <tng-table
+                      [ariaLabel]="
+                        'Delegated access actors for ' +
+                        configuration.environment
+                      "
+                      density="comfortable"
+                      [columns]="delegationActorColumns"
+                      [items]="configuration.actors"
+                    >
+                      <ng-template
+                        tngTableCellTemplate="client_id"
+                        let-row="row"
+                      >
+                        <code>{{ row.client_id }}</code>
+                      </ng-template>
+                      <ng-template tngTableCellTemplate="profile" let-row="row">
+                        {{ delegationLabel(row.profile) }}
+                      </ng-template>
+                      <ng-template
+                        tngTableCellTemplate="actor_type"
+                        let-row="row"
+                      >
+                        {{ delegationLabel(row.actor_type) }}
+                      </ng-template>
+                      <ng-template tngTableCellTemplate="scope" let-row="row">
+                        <code>{{ delegationScope(row.profile) }}</code>
+                      </ng-template>
+                      <ng-template tngTableCellTemplate="status" let-row="row">
+                        <span
+                          [class]="
+                            row.enabled ? 'status active' : 'status archived'
+                          "
+                        >
+                          {{ row.enabled ? 'Active' : 'Disabled' }}
+                        </span>
+                      </ng-template>
+                    </tng-table>
+                  } @else {
+                    <p class="state">No actor clients are configured.</p>
+                  }
+                </article>
+              }
+            </div>
+          } @else {
+            <p class="state">No delegated access is configured.</p>
+          }
+        </section>
+
+        <section
+          class="plans-section"
           aria-labelledby="entitlement-schema-heading"
         >
           <div class="section-heading">

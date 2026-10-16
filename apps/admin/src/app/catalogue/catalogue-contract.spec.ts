@@ -165,7 +165,7 @@ describe('CatalogueAdminService', () => {
 
   it('exports, validates, and atomically imports catalogue transfers', () => {
     const transfer: CatalogueTransfer = {
-      schema_version: 2,
+      schema_version: 3,
       exported_at: '2026-10-09T00:00:00.000Z',
       products: [
         {
@@ -177,6 +177,7 @@ describe('CatalogueAdminService', () => {
           active: true,
           plans: [],
           credit_packs: [],
+          delegated_access: [],
         },
       ],
     };
@@ -199,10 +200,11 @@ describe('CatalogueAdminService', () => {
     );
     validateRequest.flush({
       valid: true,
-      schema_version: 2,
+      schema_version: 3,
       products: 1,
       plans: 0,
       credit_packs: 0,
+      delegated_access: 0,
       issues: [],
     });
 
@@ -216,14 +218,15 @@ describe('CatalogueAdminService', () => {
       'admin-csrf',
     );
     importRequest.flush({
-      schema_version: 2,
+      schema_version: 3,
       products: 1,
       plans: 0,
       credit_packs: 0,
+      delegated_access: 0,
     });
   });
 
-  it('configures delegated access and applies versioned bulk JSON', () => {
+  it('configures delegated access for an existing product', () => {
     const delegation = {
       environment: 'development',
       expected_version: 0,
@@ -261,32 +264,5 @@ describe('CatalogueAdminService', () => {
     expect(put.request.method).toBe('PUT');
     expect(put.request.body).toEqual(delegation);
     put.flush({ ...delegation, product_id: 'product/1', version: 1 });
-
-    const bulk = {
-      schema_version: 1,
-      products: [],
-    } as const;
-    catalogue.validateCatalogueBulk(bulk).subscribe();
-    const validate = requests.expectOne(
-      'https://api-local.billme.sh/api/v1/admin/catalogue/bulk/validate',
-    );
-    expect(validate.request.method).toBe('POST');
-    expect(validate.request.body).toEqual(bulk);
-    validate.flush({
-      valid: true,
-      schema_version: 1,
-      products: 0,
-      plans: 0,
-      credit_packs: 0,
-      issues: [],
-    });
-
-    catalogue.applyCatalogueBulk(bulk).subscribe();
-    const apply = requests.expectOne(
-      'https://api-local.billme.sh/api/v1/admin/catalogue/bulk/apply',
-    );
-    expect(apply.request.method).toBe('POST');
-    expect(apply.request.body).toEqual(bulk);
-    apply.flush({});
   });
 });

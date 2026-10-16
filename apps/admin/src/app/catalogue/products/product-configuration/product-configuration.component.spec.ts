@@ -1,10 +1,11 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { provideRouter, Router } from '@angular/router';
+import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { CatalogueAdminService } from '@billmesh/api-client';
 import {
   DEFAULT_BILLING_POLICY,
   type BillingPolicyMetadata,
   type Product,
+  type ProductDelegationConfiguration,
 } from '@billmesh/domain';
 import { of } from 'rxjs';
 import { ProductConfigurationComponent } from './product-configuration.component';
@@ -155,5 +156,123 @@ describe('ProductConfigurationComponent billing policy', () => {
     expect(
       fixture.nativeElement.querySelector('[aria-label="Entitlement key"]'),
     ).not.toBeNull();
+  });
+
+  it('uses delegated-access environments as the configuration source of truth', () => {
+    expect(fixture.nativeElement.textContent).not.toContain(
+      'Configure delegated access for this product',
+    );
+    expect(fixture.nativeElement.textContent).toContain(
+      'No delegated access configured',
+    );
+
+    const buttons = Array.from(
+      fixture.nativeElement.querySelectorAll('tng-button'),
+    ) as HTMLElement[];
+    buttons
+      .find((button) => button.textContent?.includes('Add environment'))
+      ?.click();
+    fixture.detectChanges();
+
+    const dialog = fixture.nativeElement.querySelector(
+      '[role="dialog"]',
+    ) as HTMLElement | null;
+    expect(dialog?.textContent).toContain('Add delegated-access environment');
+  });
+});
+
+describe('ProductConfigurationComponent delegated access editor', () => {
+  let fixture: ComponentFixture<ProductConfigurationComponent>;
+  const delegatedAccess: readonly ProductDelegationConfiguration[] = [
+    {
+      product_id: product.id,
+      environment: 'development',
+      authorizer_client_id: 'daybook-billmesh-authorizer-dev',
+      enabled: true,
+      version: 1,
+      actors: [
+        {
+          client_id: 'daybook-billmesh-runtime-dev',
+          profile: 'runtime',
+          actor_type: 'service',
+          enabled: true,
+        },
+      ],
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-02T00:00:00Z',
+    },
+  ];
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ProductConfigurationComponent],
+      providers: [
+        {
+          provide: CatalogueAdminService,
+          useValue: {
+            getProductPolicyMetadata: vi.fn(() => of(metadata)),
+            getProduct: vi.fn(() => of(product)),
+            listProductDelegatedAccess: vi.fn(() => of(delegatedAccess)),
+            updateProduct: vi.fn(() => of(product)),
+          },
+        },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              paramMap: { get: () => product.id },
+              queryParamMap: { get: () => null },
+            },
+          },
+        },
+        {
+          provide: Router,
+          useValue: {
+            navigate: vi.fn(),
+            navigateByUrl: vi.fn(),
+          },
+        },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(ProductConfigurationComponent);
+    fixture.detectChanges();
+  });
+
+  it('lists actor clients in a table and applies dialog edits explicitly', () => {
+    const table = fixture.nativeElement.querySelector(
+      '[aria-label="OAuth actor clients for development"]',
+    ) as HTMLElement | null;
+    expect(table).not.toBeNull();
+    expect(table?.textContent).toContain('daybook-billmesh-runtime-dev');
+    expect(table?.querySelectorAll('tbody tr')).toHaveLength(1);
+
+    const editButton = table?.querySelector(
+      'button[aria-label="Edit actor client"]',
+    ) as HTMLElement | null;
+    editButton?.click();
+    fixture.detectChanges();
+
+    const dialog = fixture.nativeElement.querySelector(
+      '[role="dialog"]',
+    ) as HTMLElement | null;
+    expect(dialog?.textContent).toContain('Edit OAuth actor client');
+
+    const clientId = dialog?.querySelector(
+      '[aria-label="Delegation actor OAuth client ID"]',
+    ) as HTMLInputElement;
+    clientId.value = 'daybook-billmesh-runtime-v2-dev';
+    clientId.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    const applyButton = Array.from(
+      dialog?.querySelectorAll('tng-button') ?? [],
+    ).find((button) => button.textContent?.includes('Apply changes')) as
+      HTMLElement | undefined;
+    applyButton?.click();
+    fixture.detectChanges();
+
+    expect(table?.textContent).toContain('daybook-billmesh-runtime-v2-dev');
+    expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
   });
 });

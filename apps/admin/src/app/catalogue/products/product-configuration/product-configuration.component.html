@@ -42,162 +42,558 @@
             </label>
             <fieldset class="policy-group" formGroupName="delegatedAccess">
               <legend>Delegated access</legend>
-              <p class="field-help">
-                Map each environment to one IdNest grant authorizer and the
-                actor clients required by this product implementation.
-              </p>
-              <label class="boolean-field">
-                <tng-checkbox tngAngularForms formControlName="configure" />
-                <span>Configure delegated access for this product</span>
-              </label>
-              @if (form.controls.delegatedAccess.controls.configure.value) {
-                <div formArrayName="configurations" class="panel-stack">
+              <div class="delegation-section-heading">
+                <p class="field-help">
+                  Map each environment to one IdNest grant authorizer and the
+                  actor clients required by this product implementation.
+                </p>
+                @if (
+                  form.controls.delegatedAccess.controls.configurations.length
+                ) {
+                  <tng-button
+                    type="button"
+                    appearance="outline"
+                    (click)="addDelegationConfiguration()"
+                  >
+                    <tng-icon icon="plus" aria-hidden="true" />
+                    Add environment
+                  </tng-button>
+                }
+              </div>
+              @if (
+                form.controls.delegatedAccess.controls.configurations.length
+              ) {
+                <tng-accordion
+                  class="delegation-accordion"
+                  ariaLabel="Delegated-access environments"
+                  type="multiple"
+                  collapsible
+                  [defaultValue]="delegationExpandedEnvironments()"
+                >
                   @for (
                     configuration of form.controls.delegatedAccess.controls
                       .configurations.controls;
                     track configuration;
                     let configurationIndex = $index
                   ) {
-                    <section
-                      class="policy-panel"
-                      [formGroupName]="configurationIndex"
+                    <tng-accordion-item
+                      [value]="configuration.controls.environment.value"
                     >
-                      <header>
-                        <div>
-                          <h3>Environment {{ configurationIndex + 1 }}</h3>
-                          @if (configuration.controls.expectedVersion.value) {
-                            <p class="field-help">
-                              Configuration v{{
-                                configuration.controls.expectedVersion.value
-                              }}
-                            </p>
-                          }
-                        </div>
-                        <tng-button
-                          type="button"
-                          appearance="outline"
-                          (click)="
-                            removeDelegationConfiguration(configurationIndex)
-                          "
-                        >
-                          {{
-                            configuration.controls.expectedVersion.value > 0
-                              ? 'Disable environment'
-                              : 'Remove environment'
-                          }}
-                        </tng-button>
-                      </header>
-                      <div class="form-grid">
-                        <label>
-                          <span>Environment</span>
-                          <tng-input
-                            tngAngularForms
-                            formControlName="environment"
-                            ariaLabel="Delegated access environment"
-                            fullWidth
-                          />
-                        </label>
-                        <label>
-                          <span>Grant authorizer client</span>
-                          <tng-input
-                            tngAngularForms
-                            formControlName="authorizerClientId"
-                            ariaLabel="Grant authorizer OAuth client ID"
-                            fullWidth
-                          />
-                        </label>
-                        <label class="boolean-field">
-                          <tng-checkbox
-                            tngAngularForms
-                            formControlName="enabled"
-                          />
-                          <span>Enable this environment</span>
-                        </label>
-                      </div>
-
-                      <div formArrayName="actors" class="panel-stack">
-                        @for (
-                          actor of configuration.controls.actors.controls;
-                          track actor;
-                          let actorIndex = $index
-                        ) {
-                          <div class="form-grid" [formGroupName]="actorIndex">
-                            <label>
-                              <span>Actor client ID</span>
-                              <tng-input
-                                tngAngularForms
-                                formControlName="clientId"
-                                ariaLabel="Delegation actor OAuth client ID"
-                                fullWidth
-                              />
-                            </label>
-                            <label>
-                              <span>Billmesh profile</span>
-                              <tng-select
-                                aria-label="Billmesh actor profile"
-                                [options]="delegationProfileOptions"
-                                [value]="actor.controls.profile.value"
-                                (valueChange)="
-                                  updateDelegationProfile(actor, $event)
-                                "
-                              />
-                            </label>
-                            <label>
-                              <span>Actor type</span>
-                              <tng-select
-                                aria-label="Delegation actor type"
-                                [options]="
-                                  delegationActorTypeOptions(
-                                    actor.controls.profile.value
-                                  )
-                                "
-                                [value]="actor.controls.actorType.value"
-                                (valueChange)="
-                                  updateSelect(actor.controls.actorType, $event)
-                                "
-                              />
-                            </label>
-                            <label class="boolean-field">
-                              <tng-checkbox
-                                tngAngularForms
-                                formControlName="enabled"
-                              />
-                              <span>Enable actor</span>
-                            </label>
-                            <tng-button
-                              type="button"
-                              appearance="outline"
-                              (click)="
-                                removeDelegationActor(configuration, actorIndex)
+                      <tng-accordion-trigger>
+                        <span class="delegation-accordion-summary">
+                          <span class="delegation-environment-identity">
+                            <span class="delegation-icon-tile">
+                              <tng-icon icon="server" aria-hidden="true" />
+                            </span>
+                            <span>
+                              <strong>{{
+                                delegationLabel(
+                                  configuration.controls.environment.value
+                                )
+                              }}</strong>
+                              <small>{{
+                                configuration.controls.authorizerClientId
+                                  .value || 'Authorizer not configured'
+                              }}</small>
+                            </span>
+                          </span>
+                          <span class="delegation-accordion-meta">
+                            <span class="delegation-actor-count">
+                              <tng-icon icon="usersRound" aria-hidden="true" />
+                              {{ delegationActorSummary(configuration) }}
+                            </span>
+                            @if (configuration.controls.expectedVersion.value) {
+                              <span class="delegation-version"
+                                >v{{
+                                  configuration.controls.expectedVersion.value
+                                }}</span
+                              >
+                            }
+                            <tng-tag
+                              size="sm"
+                              [tone]="
+                                delegationConfigurationStatusTone(configuration)
+                              "
+                              [attr.aria-label]="
+                                'Environment status: ' +
+                                delegationConfigurationStatusLabel(
+                                  configuration
+                                )
                               "
                             >
-                              Remove actor
-                            </tng-button>
+                              @if (
+                                delegationConfigurationStatus(configuration) ===
+                                'incomplete'
+                              ) {
+                                <tng-icon
+                                  tngTagIcon
+                                  icon="triangleAlert"
+                                  aria-hidden="true"
+                                />
+                              }
+                              {{
+                                delegationConfigurationStatusLabel(
+                                  configuration
+                                )
+                              }}
+                            </tng-tag>
+                          </span>
+                        </span>
+                      </tng-accordion-trigger>
+
+                      <tng-accordion-panel>
+                        <div class="delegation-environment-panel">
+                          <header class="delegation-environment-toolbar">
+                            <div class="delegation-authorizer">
+                              <span class="delegation-icon-tile">
+                                <tng-icon icon="keyRound" aria-hidden="true" />
+                              </span>
+                              <div>
+                                <span>Grant authorizer client</span>
+                                <div class="delegation-client-value">
+                                  <code>{{
+                                    configuration.controls.authorizerClientId
+                                      .value || 'Not configured'
+                                  }}</code>
+                                  @if (
+                                    configuration.controls.authorizerClientId
+                                      .value
+                                  ) {
+                                    <tng-copy-button
+                                      appearance="ghost"
+                                      size="sm"
+                                      copyLabel="Copy client ID"
+                                      copiedLabel="Copied"
+                                      [text]="
+                                        configuration.controls
+                                          .authorizerClientId.value
+                                      "
+                                    />
+                                  }
+                                </div>
+                              </div>
+                            </div>
+
+                            <div class="delegated-environment__actions">
+                              <tng-button
+                                type="button"
+                                appearance="outline"
+                                size="sm"
+                                (click)="
+                                  editDelegationConfiguration(
+                                    configuration,
+                                    configurationIndex
+                                  )
+                                "
+                              >
+                                <tng-icon icon="pencil" aria-hidden="true" />
+                                Edit environment
+                              </tng-button>
+                              <tng-button
+                                type="button"
+                                appearance="outline"
+                                size="sm"
+                                tone="danger"
+                                (click)="
+                                  removeDelegationConfiguration(
+                                    configurationIndex
+                                  )
+                                "
+                              >
+                                <tng-icon
+                                  [icon]="
+                                    configuration.controls.expectedVersion
+                                      .value > 0
+                                      ? 'power'
+                                      : 'trash2'
+                                  "
+                                  aria-hidden="true"
+                                />
+                                {{
+                                  configuration.controls.expectedVersion.value >
+                                  0
+                                    ? 'Disable environment'
+                                    : 'Remove environment'
+                                }}
+                              </tng-button>
+                            </div>
+                          </header>
+
+                          <div class="delegation-actors-heading">
+                            <div>
+                              <h4>
+                                <tng-icon
+                                  icon="usersRound"
+                                  aria-hidden="true"
+                                />
+                                Actor clients
+                              </h4>
+                              <p class="field-help">
+                                Assign the OAuth clients used by this product
+                                implementation.
+                              </p>
+                            </div>
+                            @if (configuration.controls.actors.length) {
+                              <tng-button
+                                type="button"
+                                appearance="outline"
+                                size="sm"
+                                (click)="addDelegationActor(configuration)"
+                              >
+                                <tng-icon icon="plus" aria-hidden="true" />
+                                Add actor client
+                              </tng-button>
+                            }
                           </div>
+
+                          @if (configuration.controls.actors.length) {
+                            <tng-table
+                              [ariaLabel]="
+                                'OAuth actor clients for ' +
+                                configuration.controls.environment.value
+                              "
+                              density="comfortable"
+                              [columns]="delegationActorColumns"
+                              [items]="delegationActorRows(configuration)"
+                            >
+                              <ng-template
+                                tngTableCellTemplate="clientId"
+                                let-row="row"
+                              >
+                                <code>{{ row.controls.clientId.value }}</code>
+                              </ng-template>
+                              <ng-template
+                                tngTableCellTemplate="profile"
+                                let-row="row"
+                              >
+                                {{
+                                  delegationLabel(row.controls.profile.value)
+                                }}
+                              </ng-template>
+                              <ng-template
+                                tngTableCellTemplate="actorType"
+                                let-row="row"
+                              >
+                                {{
+                                  delegationLabel(row.controls.actorType.value)
+                                }}
+                              </ng-template>
+                              <ng-template
+                                tngTableCellTemplate="scope"
+                                let-row="row"
+                              >
+                                <code>{{
+                                  delegationScope(row.controls.profile.value)
+                                }}</code>
+                              </ng-template>
+                              <ng-template
+                                tngTableCellTemplate="status"
+                                let-row="row"
+                              >
+                                <tng-tag
+                                  size="sm"
+                                  [tone]="
+                                    row.controls.enabled.value
+                                      ? 'success'
+                                      : 'neutral'
+                                  "
+                                >
+                                  {{
+                                    row.controls.enabled.value
+                                      ? 'Active'
+                                      : 'Disabled'
+                                  }}
+                                </tng-tag>
+                              </ng-template>
+                              <ng-template
+                                tngTableCellTemplate="actions"
+                                let-rowIndex="rowIndex"
+                              >
+                                <div class="row-actions delegation-row-actions">
+                                  <button
+                                    type="button"
+                                    class="icon-action"
+                                    aria-label="Edit actor client"
+                                    title="Edit actor client"
+                                    (click)="
+                                      editDelegationActor(
+                                        configuration,
+                                        rowIndex
+                                      )
+                                    "
+                                  >
+                                    <tng-icon
+                                      icon="pencil"
+                                      aria-hidden="true"
+                                    />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    class="icon-action danger"
+                                    aria-label="Remove actor client"
+                                    title="Remove actor client"
+                                    (click)="
+                                      removeDelegationActor(
+                                        configuration,
+                                        rowIndex
+                                      )
+                                    "
+                                  >
+                                    <tng-icon
+                                      icon="trash2"
+                                      aria-hidden="true"
+                                    />
+                                  </button>
+                                </div>
+                              </ng-template>
+                            </tng-table>
+                          } @else {
+                            <tng-empty class="delegation-empty" align="start">
+                              <tng-empty-icon>
+                                <tng-icon
+                                  icon="usersRound"
+                                  aria-hidden="true"
+                                />
+                              </tng-empty-icon>
+                              <tng-empty-title
+                                >No actor clients</tng-empty-title
+                              >
+                              <tng-empty-description>
+                                Add at least one enabled actor before activating
+                                this environment.
+                              </tng-empty-description>
+                              <tng-empty-actions>
+                                <tng-button
+                                  type="button"
+                                  appearance="outline"
+                                  (click)="addDelegationActor(configuration)"
+                                >
+                                  <tng-icon icon="plus" aria-hidden="true" />
+                                  Add actor client
+                                </tng-button>
+                              </tng-empty-actions>
+                            </tng-empty>
+                          }
+                        </div>
+                      </tng-accordion-panel>
+                    </tng-accordion-item>
+                  }
+                </tng-accordion>
+              } @else {
+                <tng-empty class="delegation-empty" align="start">
+                  <tng-empty-icon>
+                    <tng-icon icon="shieldCheck" aria-hidden="true" />
+                  </tng-empty-icon>
+                  <tng-empty-title
+                    >No delegated access configured</tng-empty-title
+                  >
+                  <tng-empty-description>
+                    Add an environment when this product uses delegated IdNest
+                    access.
+                  </tng-empty-description>
+                  <tng-empty-actions>
+                    <tng-button
+                      type="button"
+                      appearance="outline"
+                      (click)="addDelegationConfiguration()"
+                    >
+                      <tng-icon icon="plus" aria-hidden="true" />
+                      Add environment
+                    </tng-button>
+                  </tng-empty-actions>
+                </tng-empty>
+              }
+
+              @if (
+                form.controls.delegatedAccess.controls.configurations.dirty
+              ) {
+                <p class="delegation-staged-changes" role="status">
+                  <tng-icon icon="info" aria-hidden="true" />
+                  Delegated-access changes will be applied when you save the
+                  product.
+                </p>
+              }
+
+              <tng-dialog
+                class="delegation-dialog"
+                description="Configure the environment and its IdNest grant authorizer client."
+                [open]="editingDelegationConfiguration() !== null"
+                [title]="delegationConfigurationEditorTitle()"
+                [closeOnBackdrop]="true"
+                [closeOnEscape]="true"
+                (openChange)="onDelegationConfigurationEditorOpenChange($event)"
+              >
+                @if (editingDelegationConfiguration(); as configurationEditor) {
+                  <div
+                    class="delegation-dialog-form"
+                    [formGroup]="configurationEditor.draft"
+                  >
+                    <div class="form-grid">
+                      <label>
+                        <span>Environment</span>
+                        <tng-input
+                          tngAngularForms
+                          formControlName="environment"
+                          ariaLabel="Delegated access environment"
+                          autocomplete="off"
+                          fullWidth
+                        />
+                        @if (
+                          configurationEditor.draft.controls.environment
+                            .disabled
+                        ) {
+                          <small class="field-help"
+                            >An existing environment identifier cannot be
+                            changed.</small
+                          >
                         }
-                      </div>
+                      </label>
+                      <label>
+                        <span>Grant authorizer client ID</span>
+                        <tng-input
+                          tngAngularForms
+                          formControlName="authorizerClientId"
+                          ariaLabel="Grant authorizer OAuth client ID"
+                          autocomplete="off"
+                          fullWidth
+                        />
+                      </label>
+                    </div>
+                    <label class="boolean-field">
+                      <tng-checkbox tngAngularForms formControlName="enabled" />
+                      <span>Enable this environment</span>
+                    </label>
+                    @if (
+                      delegationConfigurationEditorValidationError();
+                      as editorError
+                    ) {
+                      <p class="notice notice--error" role="alert">
+                        {{ editorError }}
+                      </p>
+                    }
+                    <div class="form-actions delegation-dialog-actions">
                       <tng-button
                         type="button"
                         appearance="outline"
-                        (click)="addDelegationActor(configuration)"
+                        (click)="closeDelegationConfigurationEditor()"
+                        >Cancel</tng-button
                       >
-                        Add actor
-                      </tng-button>
-                    </section>
-                  }
-                </div>
-                <tng-button
-                  type="button"
-                  appearance="outline"
-                  (click)="addDelegationConfiguration()"
-                >
-                  Add environment
-                </tng-button>
-                @if (delegationValidationError(); as delegationError) {
-                  <p class="notice notice--error" role="alert">
-                    {{ delegationError }}
-                  </p>
+                      <tng-button
+                        type="button"
+                        [disabled]="
+                          delegationConfigurationEditorValidationError() !== ''
+                        "
+                        (click)="applyDelegationConfiguration()"
+                        >Apply changes</tng-button
+                      >
+                    </div>
+                  </div>
                 }
+              </tng-dialog>
+
+              <tng-dialog
+                class="delegation-dialog"
+                description="Configure how this IdNest OAuth client acts for the product."
+                [open]="editingDelegationActor() !== null"
+                [title]="delegationActorEditorTitle()"
+                [closeOnBackdrop]="true"
+                [closeOnEscape]="true"
+                (openChange)="onDelegationActorEditorOpenChange($event)"
+              >
+                @if (editingDelegationActor(); as actorEditor) {
+                  <div
+                    class="delegation-dialog-form"
+                    [formGroup]="actorEditor.draft"
+                  >
+                    <div class="form-grid">
+                      <label>
+                        <span>Actor client ID</span>
+                        <tng-input
+                          tngAngularForms
+                          formControlName="clientId"
+                          ariaLabel="Delegation actor OAuth client ID"
+                          autocomplete="off"
+                          fullWidth
+                        />
+                      </label>
+                      <label>
+                        <span>Billmesh profile</span>
+                        <tng-select
+                          aria-label="Billmesh actor profile"
+                          [options]="delegationProfileOptions"
+                          [value]="actorEditor.draft.controls.profile.value"
+                          (valueChange)="
+                            updateDelegationProfile(actorEditor.draft, $event)
+                          "
+                        />
+                      </label>
+                      <label>
+                        <span>Actor type</span>
+                        <tng-select
+                          aria-label="Delegation actor type"
+                          [options]="
+                            delegationActorTypeOptions(
+                              actorEditor.draft.controls.profile.value
+                            )
+                          "
+                          [value]="actorEditor.draft.controls.actorType.value"
+                          (valueChange)="
+                            updateSelect(
+                              actorEditor.draft.controls.actorType,
+                              $event
+                            )
+                          "
+                        />
+                      </label>
+                      <label>
+                        <span>Derived scope</span>
+                        <tng-input
+                          [value]="
+                            delegationScope(
+                              actorEditor.draft.controls.profile.value
+                            )
+                          "
+                          ariaLabel="Derived Billmesh scope"
+                          readonly
+                          fullWidth
+                        />
+                      </label>
+                    </div>
+                    <label class="boolean-field">
+                      <tng-checkbox tngAngularForms formControlName="enabled" />
+                      <span>Enable actor client</span>
+                    </label>
+                    @if (
+                      delegationActorEditorValidationError();
+                      as editorError
+                    ) {
+                      <p class="notice notice--error" role="alert">
+                        {{ editorError }}
+                      </p>
+                    }
+                    <div class="form-actions delegation-dialog-actions">
+                      <tng-button
+                        type="button"
+                        appearance="outline"
+                        (click)="closeDelegationActorEditor()"
+                        >Cancel</tng-button
+                      >
+                      <tng-button
+                        type="button"
+                        [disabled]="
+                          delegationActorEditorValidationError() !== ''
+                        "
+                        (click)="applyDelegationActor()"
+                        >Apply changes</tng-button
+                      >
+                    </div>
+                  </div>
+                }
+              </tng-dialog>
+              @if (delegationValidationError(); as delegationError) {
+                <p class="notice notice--error" role="alert">
+                  {{ delegationError }}
+                </p>
               }
             </fieldset>
             <section class="policy-panel" formGroupName="policy">

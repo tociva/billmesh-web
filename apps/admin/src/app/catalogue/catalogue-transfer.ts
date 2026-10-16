@@ -1,8 +1,8 @@
 import type {
   BillingPolicy,
-  CatalogueBulkDocument,
   CatalogueTransfer,
   CatalogueTransferCreditPack,
+  CatalogueTransferDelegationConfiguration,
   CatalogueTransferPlan,
   CatalogueTransferProduct,
   EntitlementSchema,
@@ -13,44 +13,18 @@ import type {
 export type {
   CatalogueTransfer,
   CatalogueTransferCreditPack,
+  CatalogueTransferDelegationConfiguration,
   CatalogueTransferPlan,
   CatalogueTransferProduct,
 } from '@billmesh/domain';
 
-export const CATALOGUE_TRANSFER_SCHEMA_VERSION = 2 as const;
-
-export function parseCatalogueBulkDocument(
-  text: string,
-): CatalogueBulkDocument {
-  let value: unknown;
-  try {
-    value = JSON.parse(text);
-  } catch {
-    throw new Error('The selected file is not valid JSON.');
-  }
-  const root = record(value, 'The bulk catalogue file');
-  if (root['schema_version'] !== 1) {
-    throw new Error('Bulk catalogue schema_version must be 1.');
-  }
-  if (!Array.isArray(root['products'])) {
-    throw new Error('The bulk catalogue file must contain a products array.');
-  }
-  root['products'].forEach((item, index) => {
-    const product = record(item, `products[${index}]`);
-    const operation = product['operation'];
-    if (operation !== 'create' && operation !== 'update') {
-      throw new Error(`products[${index}].operation must be create or update.`);
-    }
-    nonNegativeInteger(product, 'expected_version', `products[${index}]`);
-    requiredString(product, 'slug', `products[${index}]`);
-  });
-  return value as CatalogueBulkDocument;
-}
+export const CATALOGUE_TRANSFER_SCHEMA_VERSION = 3 as const;
 
 export interface CatalogueProductWithPlans {
   readonly product: Product;
   readonly plans: readonly Plan[];
   readonly creditPacks?: readonly CatalogueTransferCreditPack[];
+  readonly delegatedAccess?: readonly CatalogueTransferDelegationConfiguration[];
 }
 
 export function buildCatalogueTransfer(
@@ -60,42 +34,45 @@ export function buildCatalogueTransfer(
   return {
     schema_version: CATALOGUE_TRANSFER_SCHEMA_VERSION,
     exported_at: exportedAt.toISOString(),
-    products: records.map(({ product, plans, creditPacks = [] }) => ({
-      slug: product.slug,
-      name: product.name,
-      description: product.description,
-      entitlement_schema: product.entitlement_schema,
-      billing_policy: product.billing_policy,
-      active: product.active,
-      credit_packs: creditPacks,
-      plans: plans.map((plan) => {
-        const selectable = plan.selectable ?? true;
-        return {
-          slug: plan.slug,
-          plan_family_id: plan.plan_family_id,
-          name: plan.name,
-          description: plan.description ?? '',
-          price_minor: plan.price_minor,
-          currency: plan.currency,
-          included_credits: plan.included_credits,
-          entitlements: plan.entitlements,
-          billing_interval: plan.billing_interval,
-          billing_model:
-            plan.billing_model ?? (plan.price_minor === 0 ? 'free' : 'paid'),
-          selectable,
-          default_for_product: plan.default_for_product ?? false,
-          checkout_enabled:
-            plan.checkout_enabled ?? (plan.active && selectable),
-          ...(plan.effective_from
-            ? { effective_from: plan.effective_from }
-            : {}),
-          ...(plan.effective_to !== undefined
-            ? { effective_to: plan.effective_to }
-            : {}),
-          active: plan.active,
-        };
+    products: records.map(
+      ({ product, plans, creditPacks = [], delegatedAccess = [] }) => ({
+        slug: product.slug,
+        name: product.name,
+        description: product.description,
+        entitlement_schema: product.entitlement_schema,
+        billing_policy: product.billing_policy,
+        active: product.active,
+        credit_packs: creditPacks,
+        delegated_access: delegatedAccess,
+        plans: plans.map((plan) => {
+          const selectable = plan.selectable ?? true;
+          return {
+            slug: plan.slug,
+            plan_family_id: plan.plan_family_id,
+            name: plan.name,
+            description: plan.description ?? '',
+            price_minor: plan.price_minor,
+            currency: plan.currency,
+            included_credits: plan.included_credits,
+            entitlements: plan.entitlements,
+            billing_interval: plan.billing_interval,
+            billing_model:
+              plan.billing_model ?? (plan.price_minor === 0 ? 'free' : 'paid'),
+            selectable,
+            default_for_product: plan.default_for_product ?? false,
+            checkout_enabled:
+              plan.checkout_enabled ?? (plan.active && selectable),
+            ...(plan.effective_from
+              ? { effective_from: plan.effective_from }
+              : {}),
+            ...(plan.effective_to !== undefined
+              ? { effective_to: plan.effective_to }
+              : {}),
+            active: plan.active,
+          };
+        }),
       }),
-    })),
+    ),
   };
 }
 
@@ -108,9 +85,13 @@ export function parseCatalogueTransfer(text: string): CatalogueTransfer {
   }
 
   const root = record(value, 'The catalogue file');
-  if (root['schema_version'] !== 1 && root['schema_version'] !== 2) {
+  if (
+    root['schema_version'] !== 1 &&
+    root['schema_version'] !== 2 &&
+    root['schema_version'] !== CATALOGUE_TRANSFER_SCHEMA_VERSION
+  ) {
     throw new Error(
-      `Unsupported catalogue schema version. Expected 1 or ${CATALOGUE_TRANSFER_SCHEMA_VERSION}.`,
+      `Unsupported catalogue schema version. Expected 1, 2, or ${CATALOGUE_TRANSFER_SCHEMA_VERSION}.`,
     );
   }
   if (!Array.isArray(root['products'])) {
@@ -144,10 +125,28 @@ export function parseCatalogueTransfer(text: string): CatalogueTransfer {
       throw new Error(`${path}.plans must be an array.`);
     }
     if (
+      root['schema_version'] === CATALOGUE_TRANSFER_SCHEMA_VERSION &&
+      !Array.isArray(product['credit_packs'])
+    ) {
+      throw new Error(`${path}.credit_packs must be an array.`);
+    }
+    if (
       product['credit_packs'] !== undefined &&
       !Array.isArray(product['credit_packs'])
     ) {
       throw new Error(`${path}.credit_packs must be an array.`);
+    }
+    if (
+      root['schema_version'] === CATALOGUE_TRANSFER_SCHEMA_VERSION &&
+      !Array.isArray(product['delegated_access'])
+    ) {
+      throw new Error(`${path}.delegated_access must be an array.`);
+    }
+    if (
+      product['delegated_access'] !== undefined &&
+      !Array.isArray(product['delegated_access'])
+    ) {
+      throw new Error(`${path}.delegated_access must be an array.`);
     }
 
     const planSlugs = new Set<string>();
@@ -274,6 +273,97 @@ export function parseCatalogueTransfer(text: string): CatalogueTransfer {
       },
     );
 
+    const delegationEnvironments = new Set<string>();
+    const delegatedAccess = (product['delegated_access'] ?? []).map(
+      (configurationValue, configurationIndex) => {
+        const configurationPath = `${path}.delegated_access[${configurationIndex}]`;
+        const configuration = record(configurationValue, configurationPath);
+        const environment = requiredString(
+          configuration,
+          'environment',
+          configurationPath,
+        );
+        if (!/^[a-z][a-z0-9-]{0,62}$/.test(environment)) {
+          throw new Error(
+            `${configurationPath}.environment must be a lowercase, hyphenated identifier.`,
+          );
+        }
+        if (delegationEnvironments.has(environment)) {
+          throw new Error(
+            `Duplicate delegated-access environment "${environment}" for product "${slug}".`,
+          );
+        }
+        delegationEnvironments.add(environment);
+
+        const enabled = booleanValue(
+          configuration,
+          'enabled',
+          configurationPath,
+        );
+        if (!active && enabled) {
+          throw new Error(
+            `${configurationPath} cannot be enabled for an archived product.`,
+          );
+        }
+        const authorizerClientId = requiredString(
+          configuration,
+          'authorizer_client_id',
+          configurationPath,
+        );
+        if (!Array.isArray(configuration['actors'])) {
+          throw new Error(`${configurationPath}.actors must be an array.`);
+        }
+        const actorClientIds = new Set<string>();
+        const actors = configuration['actors'].map((actorValue, actorIndex) => {
+          const actorPath = `${configurationPath}.actors[${actorIndex}]`;
+          const actor = record(actorValue, actorPath);
+          const clientId = requiredString(actor, 'client_id', actorPath);
+          if (clientId === authorizerClientId) {
+            throw new Error(
+              `${actorPath}.client_id cannot match the authorizer client ID.`,
+            );
+          }
+          if (actorClientIds.has(clientId)) {
+            throw new Error(
+              `Duplicate actor client ID "${clientId}" in ${configurationPath}.`,
+            );
+          }
+          actorClientIds.add(clientId);
+          const profile = requiredString(actor, 'profile', actorPath);
+          const actorType = requiredString(actor, 'actor_type', actorPath);
+          if (
+            (profile === 'billing' &&
+              actorType !== 'user' &&
+              actorType !== 'service') ||
+            ((profile === 'catalogue' || profile === 'runtime') &&
+              actorType !== 'service') ||
+            (profile !== 'catalogue' &&
+              profile !== 'billing' &&
+              profile !== 'runtime')
+          ) {
+            throw new Error(`${actorPath} has an invalid profile/actor type.`);
+          }
+          return {
+            client_id: clientId,
+            profile: profile as 'catalogue' | 'billing' | 'runtime',
+            actor_type: actorType as 'user' | 'service',
+            enabled: booleanValue(actor, 'enabled', actorPath),
+          };
+        });
+        if (enabled && !actors.some((actor) => actor.enabled)) {
+          throw new Error(
+            `${configurationPath} requires at least one enabled actor.`,
+          );
+        }
+        return {
+          environment,
+          enabled,
+          authorizer_client_id: authorizerClientId,
+          actors,
+        } satisfies CatalogueTransferDelegationConfiguration;
+      },
+    );
+
     return {
       slug,
       name: requiredString(product, 'name', path),
@@ -283,11 +373,12 @@ export function parseCatalogueTransfer(text: string): CatalogueTransfer {
       active,
       plans,
       credit_packs: creditPacks,
+      delegated_access: delegatedAccess,
     } satisfies CatalogueTransferProduct;
   });
 
   return {
-    schema_version: root['schema_version'] as 1 | 2,
+    schema_version: root['schema_version'] as 1 | 2 | 3,
     exported_at:
       optionalString(root, 'exported_at', 'The catalogue file') ??
       new Date(0).toISOString(),
@@ -309,6 +400,30 @@ export function catalogueTransferCreditPackCount(
 ): number {
   return transfer.products.reduce(
     (total, product) => total + product.credit_packs.length,
+    0,
+  );
+}
+
+export function catalogueTransferDelegatedAccessCount(
+  transfer: CatalogueTransfer,
+): number {
+  return transfer.products.reduce(
+    (total, product) => total + product.delegated_access.length,
+    0,
+  );
+}
+
+export function catalogueTransferActorCount(
+  transfer: CatalogueTransfer,
+): number {
+  return transfer.products.reduce(
+    (productTotal, product) =>
+      productTotal +
+      product.delegated_access.reduce(
+        (configurationTotal, configuration) =>
+          configurationTotal + configuration.actors.length,
+        0,
+      ),
     0,
   );
 }
