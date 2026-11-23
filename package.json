@@ -8,6 +8,7 @@
   "scripts": {
     "start:console": "nx serve console",
     "start:admin": "nx serve admin",
+    "github:sync-environment": "node scripts/github/sync-environment.mjs",
     "build": "nx run-many -t build --parallel=2",
     "test": "nx run-many -t test",
     "lint": "eslint \"apps/**/*.ts\" \"libs/**/*.ts\"",

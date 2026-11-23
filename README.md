@@ -109,3 +109,25 @@ files contain safe local defaults only. Each application also ships a
 `config.tpl.json` using the public `$AUTH_BFF_BASE_URL` and `$API_BASE_URL`
 deployment placeholders, following the Daybook runtime-config contract. OAuth
 client secrets remain in the BFF.
+
+## GitHub deployment environment
+
+The Admin development deployment reads configuration from the
+`development-admin` GitHub Environment. Use the ignored local file
+`tmp/development.env` as the single source for its variables and secrets:
+
+```bash
+cp tmp/development.env.example tmp/development.env
+chmod 600 tmp/development.env
+# Fill in the Cloudflare project, account, and token values.
+pnpm github:sync-environment -- tmp/development.env --dry-run
+pnpm github:sync-environment -- tmp/development.env
+```
+
+The target GitHub Environment must already exist, and GitHub CLI must be
+installed and authenticated for the repository. Entries prefixed with
+`GITHUB_VAR_` are uploaded as Environment variables; entries prefixed with
+`GITHUB_SECRET_` are uploaded as encrypted Environment secrets. The prefixes
+are not included in the GitHub names. Use `--repo OWNER/REPO` when running the
+command outside this repository. The command updates values declared in the
+file but does not delete additional values already stored in GitHub.
