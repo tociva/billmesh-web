@@ -23,6 +23,7 @@
       "defaultConfiguration": "production",
       "options": {
         "outputPath": "dist/apps/admin",
+        "deployUrl": "/",
         "browser": "apps/admin/src/main.ts",
         "index": "apps/admin/src/index.html",
         "tsConfig": "apps/admin/tsconfig.app.json",

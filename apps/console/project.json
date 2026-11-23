@@ -16,6 +16,7 @@
       "defaultConfiguration": "production",
       "options": {
         "outputPath": "dist/apps/console",
+        "deployUrl": "/",
         "browser": "apps/console/src/main.ts",
         "index": "apps/console/src/index.html",
         "tsConfig": "apps/console/tsconfig.app.json",

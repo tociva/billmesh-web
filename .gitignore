@@ -17,3 +17,4 @@ out-tsc/
 *.tsbuildinfo
 apps/admin/public/config/config.json
 apps/console/public/config/config.json
+tmp/
