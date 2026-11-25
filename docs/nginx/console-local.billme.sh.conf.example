@@ -9,6 +9,10 @@ server {
     ssl_certificate     /opt/homebrew/etc/nginx/ssl/local.billme.sh.pem;
     ssl_certificate_key /opt/homebrew/etc/nginx/ssl/local.billme.sh-key.pem;
 
+    # Razorpay Standard Checkout is allowed only in the customer Console.
+    # Keep the Admin policy separate so Checkout cannot load there.
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' https://checkout.razorpay.com; frame-src https://api.razorpay.com; connect-src 'self' https://api.razorpay.com wss://console-local.billme.sh; img-src 'self' data: https://checkout.razorpay.com https://api.razorpay.com https://cdn.razorpay.com; style-src 'self' 'unsafe-inline'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'" always;
+
     location / {
         proxy_pass http://127.0.0.1:5200;
         proxy_http_version 1.1;

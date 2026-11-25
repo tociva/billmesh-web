@@ -1,10 +1,11 @@
 import { Component, inject } from '@angular/core';
 import { AuthStore } from '@billmesh/auth';
 import { WorkspaceShellComponent } from '@billmesh/ui';
+import { BillingCheckoutComponent } from '../billing/billing-checkout.component';
 
 @Component({
   selector: 'billmesh-console-workspace',
-  imports: [WorkspaceShellComponent],
+  imports: [BillingCheckoutComponent, WorkspaceShellComponent],
   template: `
     <billmesh-workspace-shell
       title="Console"
@@ -12,10 +13,7 @@ import { WorkspaceShellComponent } from '@billmesh/ui';
       [userName]="authStore.currentUser()?.name ?? 'Billmesh user'"
       (logout)="logout()"
     >
-      <p>
-        Console feature routes will be added here without exposing IdNest tokens
-        to the browser.
-      </p>
+      <billmesh-billing-checkout />
     </billmesh-workspace-shell>
   `,
 })

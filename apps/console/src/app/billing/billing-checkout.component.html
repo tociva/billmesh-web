@@ -1,0 +1,41 @@
+<section class="checkout-card" aria-labelledby="checkout-title">
+  <div>
+    <p class="eyebrow">Secure billing</p>
+    <h2 id="checkout-title">Subscription checkout</h2>
+    @if (flow.transition(); as transition) {
+      <p class="plan-name">{{ transition.plan_name }}</p>
+      @if (transition.checkout?.client_config) {
+        <p class="amount">
+          {{ amount() / 100 | currency: currency() : 'symbol' : '1.2-2' }}
+        </p>
+      }
+    }
+  </div>
+
+  <p
+    class="status"
+    [class.error]="flow.state() === 'failed' || flow.state() === 'offline'"
+    aria-live="polite"
+    aria-atomic="true"
+  >
+    @if (busy()) {
+      <span class="spinner" aria-hidden="true"></span>
+    }
+    {{ flow.message() }}
+  </p>
+
+  <div class="actions">
+    @if (canPay()) {
+      <button #payButton type="button" (click)="pay(payButton)">
+        Pay securely with Razorpay
+      </button>
+    }
+    @if (canRetry()) {
+      <button type="button" (click)="retry()">Retry status check</button>
+    }
+  </div>
+
+  <p class="safety-note">
+    Paid access is enabled only after Billmesh verifies the captured payment.
+  </p>
+</section>
