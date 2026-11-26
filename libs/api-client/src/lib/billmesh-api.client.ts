@@ -3,6 +3,10 @@ import { Injectable, inject } from '@angular/core';
 import { AppConfigStore } from '@billmesh/config';
 import type { Observable } from 'rxjs';
 
+export interface BillmeshRequestOptions {
+  headers?: Record<string, string | string[]>;
+}
+
 @Injectable({ providedIn: 'root' })
 export class BillmeshApiClient {
   private readonly configStore = inject(AppConfigStore);
@@ -12,8 +16,12 @@ export class BillmeshApiClient {
     return this.http.get<T>(this.resolvePath(path));
   }
 
-  post<TResponse, TBody>(path: string, body: TBody): Observable<TResponse> {
-    return this.http.post<TResponse>(this.resolvePath(path), body);
+  post<TResponse, TBody>(
+    path: string,
+    body: TBody,
+    options: BillmeshRequestOptions = {},
+  ): Observable<TResponse> {
+    return this.http.post<TResponse>(this.resolvePath(path), body, options);
   }
 
   patch<TResponse, TBody>(path: string, body: TBody): Observable<TResponse> {

@@ -2,10 +2,15 @@ import { Component, inject } from '@angular/core';
 import { AuthStore } from '@billmesh/auth';
 import { WorkspaceShellComponent } from '@billmesh/ui';
 import { BillingCheckoutComponent } from '../billing/billing-checkout.component';
+import { CreditPackCheckoutComponent } from '../billing/credit-pack-checkout.component';
 
 @Component({
   selector: 'billmesh-console-workspace',
-  imports: [BillingCheckoutComponent, WorkspaceShellComponent],
+  imports: [
+    BillingCheckoutComponent,
+    CreditPackCheckoutComponent,
+    WorkspaceShellComponent,
+  ],
   template: `
     <billmesh-workspace-shell
       title="Console"
@@ -14,6 +19,7 @@ import { BillingCheckoutComponent } from '../billing/billing-checkout.component'
       (logout)="logout()"
     >
       <billmesh-billing-checkout />
+      <billmesh-credit-pack-checkout />
     </billmesh-workspace-shell>
   `,
 })

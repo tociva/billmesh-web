@@ -1,9 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { Injectable, inject } from '@angular/core';
-import type {
-  RazorpayCheckoutResult,
-  SubscriptionTransition,
-} from './billing.models';
+import type { CheckoutSubject, RazorpayCheckoutResult } from './billing.models';
 
 const CHECKOUT_SCRIPT_ID = 'razorpay-checkout-script';
 export const RAZORPAY_CHECKOUT_SCRIPT_URL =
@@ -50,7 +47,7 @@ export class RazorpayCheckoutService {
   private scriptPromise: Promise<void> | null = null;
 
   async open(
-    transition: SubscriptionTransition,
+    transition: CheckoutSubject,
     callbacks: CheckoutCallbacks,
   ): Promise<void> {
     const config = transition.checkout?.client_config;

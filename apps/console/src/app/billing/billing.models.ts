@@ -56,3 +56,24 @@ export interface CheckoutConfirmationResult {
   provider_payment_id: string;
   snapshot_url: string;
 }
+
+export interface CreditPack {
+  id: string;
+  name: string;
+  credits: number;
+  price_minor: number;
+  currency: string;
+  validity_days: number | null;
+}
+
+export interface PaymentOrder {
+  payment_id: string;
+  credit_pack_id: string;
+  credits: number;
+  checkout: Checkout;
+}
+
+export interface CheckoutSubject {
+  payment_id: string | null;
+  checkout: Checkout | null;
+}
